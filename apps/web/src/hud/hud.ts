@@ -72,6 +72,7 @@ export class Hud {
   history: ConsoleLine[] = [];
   private lines: ConsoleLine[] = [];
   private lastTick = 0;
+  private lastGaugeAt = -1000;
 
   constructor(container: HTMLElement, private host: HudHost) {
     const root = h('div', { class: 'hud', 'data-testid': 'cockpit', 'data-mode': 'wide' });
@@ -286,12 +287,14 @@ export class Hud {
   }
 
   /** Per-frame: overlay and threat ring at 60 Hz, gauges and radar at 30 Hz. */
-  draw(s: GameState, scene: GameScene, nowMs: number, dtMs: number, comfortVignette: boolean): void {
+  draw(s: GameState, scene: GameScene, nowMs: number, dtMs: number, comfortVignette: boolean, force = false): void {
     this.lastState = s;
     this.frame += 1;
     this.overlay.draw(s, scene, this.palette, nowMs, dtMs);
     this.drawThreatRing(s);
-    if (this.frame % 2 === 0) {
+    // Gauges and radar refresh at about 30 Hz.
+    if (force || nowMs - this.lastGaugeAt >= 30 || nowMs < this.lastGaugeAt) {
+      this.lastGaugeAt = nowMs;
       this.drawGauges(s);
       this.radar.draw(s, this.palette);
     }

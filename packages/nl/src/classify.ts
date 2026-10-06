@@ -3,7 +3,7 @@ import type { StrategicKind } from '@crewstrike/shared';
 const STRATEGIC_MARKER = /\b(?:should|shall|do i|better|best|worth|which|recommend|advice|advise|plan|or)\b|\?$/;
 
 const RULES: [StrategicKind, RegExp][] = [
-  ['abort', /\babort\b|give up|call it|turn back|bail|go home|head home|retreat|\bquit\b/],
+  ['abort', /\babort\b|give up|call it|turn back|bail|go home|head home|retreat|\bquit\b|keep going|press on|carry on/],
   ['escape', /\bescape\b|run away|\brun\b|get away|bug out|disengage|\bevade\b|lose them|shake (?:them|him|it)|get out/],
   ['route_choice', /\broute\b|which way|\bpath\b|this way|that way|north or south|south or north|\bvalley\b|go around|which side/],
   ['attack_plan', /best way to (?:hit|attack|strike|destroy|kill)|how should i (?:hit|attack|strike)|attack plan|strike plan|plan of attack|approach the target|hit the target/],

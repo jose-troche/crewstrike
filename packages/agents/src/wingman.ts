@@ -135,7 +135,7 @@ export class AgentRuntime {
     const active = AGENT_IDS.filter(id => all.some(f => f.agent === id && chatterAllows(this.chatter, f)));
     return {
       lines: st.lines.map(l => ({ ...l })),
-      fresh,
+      fresh: fresh ? { ...fresh } : null,
       active,
       status,
       liveKeys: all.filter(f => f.level === 'red').map(f => f.key),

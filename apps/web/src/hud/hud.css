@@ -179,7 +179,8 @@ html, body {
 .radar { padding: 4px; border-radius: 50%; aspect-ratio: 1; width: clamp(110px, 24vh, 240px); }
 .hud[data-mode='touch'] .radar { width: clamp(84px, 25vh, 170px); }
 .radar canvas { width: 100%; height: 100%; display: block; border-radius: 50%; }
-.radar .range { position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); font-size: 0.7em; min-height: 24px; min-width: 44px; padding: 0 6px; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 8px; }
+.radar .range { position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); font-size: 0.7em; min-height: 44px; min-width: 44px; padding: 0 6px; background: transparent; border: none; }
+.radar .range::before { content: ''; position: absolute; inset: 11px 0; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 8px; z-index: -1; }
 
 /* Aim area: reserved for crosshair and threat ring */
 .aim-area {
@@ -359,3 +360,6 @@ html, body {
 .hud[data-mode='touch'] .damage svg { max-height: 9vh; }
 .hud[data-mode='touch'] .panel { padding: 3px 5px; }
 .hud[data-mode='touch'] .mission-bar, .hud[data-mode='touch'] .objective { min-height: 40px; }
+
+/* HUD panels sit above the full-height touch stick zone so their buttons stay tappable. */
+.hud > [class*='area-'] { position: relative; z-index: 2; }

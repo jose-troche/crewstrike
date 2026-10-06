@@ -8,7 +8,8 @@ export interface Wm {
   start(mission: string, opts?: { seed?: number; difficulty?: DifficultyName }): void;
   pause(): void;
   resume(): void;
-  step(frames: number): void;
+  step(frames: number, render?: boolean): void;
+  connect(): Promise<string | null>;
   spawn(ev: SpawnEvent): void;
   ask(text: string): Promise<NlResult>;
   snapshot(): GameSnapshot;
@@ -38,7 +39,8 @@ export function installTestHooks(app: GameApp): void {
     resume: () => {
       TEST_HOOKS_PAUSED.value = false;
     },
-    step: n => app.stepFrames(n),
+    step: (n, render = true) => app.stepFrames(n, render),
+    connect: () => app.ensureSession(),
     spawn: ev => app.spawn(ev),
     ask: t => app.ask(t, 'test'),
     snapshot: () => snapshot(app.state),

@@ -130,7 +130,11 @@ export class TouchControls {
   private stickDown(e: PointerEvent): void {
     if (this.stick.id !== -1) return;
     this.cb.gesture();
-    this.stickZone.setPointerCapture(e.pointerId);
+    try {
+      this.stickZone.setPointerCapture(e.pointerId);
+    } catch {
+      // synthetic or already-released pointer
+    }
     const r = this.stickZone.getBoundingClientRect();
     this.stick = { id: e.pointerId, ox: e.clientX - r.left, oy: e.clientY - r.top, x: 0, y: 0 };
     this.base.style.left = `${this.stick.ox}px`;

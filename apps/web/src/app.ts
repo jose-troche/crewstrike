@@ -211,7 +211,7 @@ export class GameApp {
     if (!TEST_HOOKS) void this.ensureSession();
   }
 
-  private ensureSession(): Promise<string | null> {
+  ensureSession(): Promise<string | null> {
     if (this.router.session) return Promise.resolve(this.router.session);
     if (!this.sessionPromise) {
       this.sessionPromise = (async () => {
@@ -349,15 +349,18 @@ export class GameApp {
       }
       if (this.acc > STEP * 8) this.acc = 0;
     }
-    this.renderFrame(now, dtMs);
-    this.scene.trackFrame(dtMs);
+    // Test builds freeze drawing while a test steps the game by hand.
+    if (!TEST_HOOKS_PAUSED.value) {
+      this.renderFrame(now, dtMs);
+      this.scene.trackFrame(dtMs);
+    }
     requestAnimationFrame(t => this.frame(t));
   }
 
-  renderFrame(now: number, dtMs: number): void {
-    const alpha = this.running ? Math.min(1, this.acc / STEP) : 1;
+  renderFrame(now: number, dtMs: number, force = false): void {
+    const alpha = this.running && !force ? Math.min(1, this.acc / STEP) : 1;
     this.scene.render(this.state, alpha, now);
-    this.hud.draw(this.state, this.scene, now, dtMs, this.settings.vignette);
+    this.hud.draw(this.state, this.scene, now, dtMs, this.settings.vignette, force);
   }
 
   /** One fixed 60 Hz step plus the 10 Hz agent snapshot. */
@@ -534,12 +537,12 @@ export class GameApp {
   }
 
   /** Advance n fixed steps synchronously (test hooks), then draw one frame. */
-  stepFrames(n: number): void {
+  stepFrames(n: number, render = true): void {
     for (let i = 0; i < n; i++) {
       if (this.state.status !== 'playing' && this.ui.get().screen === 'results') break;
       this.tick();
     }
-    this.renderFrame(performance.now(), 16);
+    if (render) this.renderFrame(performance.now(), 16, true);
   }
 }
 
