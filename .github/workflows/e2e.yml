@@ -1,0 +1,19 @@
+# Optional; never blocks deploy. Start it by hand from the Actions tab.
+name: e2e (optional)
+on: { workflow_dispatch: {} }
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm test:e2e --grep-invert "@visual|@perf"
+        env: { CI: '1' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: playwright-report, path: playwright-report }

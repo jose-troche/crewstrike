@@ -1,0 +1,26 @@
+name: deploy
+on:
+  push: { branches: [main] }
+  workflow_dispatch: {}
+jobs:
+  ship:
+    runs-on: ubuntu-latest
+    env:
+      HAS_TOKEN: ${{ secrets.CF_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck && pnpm test          # Vitest only; Playwright is not here
+      - run: pnpm --filter web build
+      # Deploys only when the repository has a CF_API_TOKEN secret (Workers, D1 and Workers AI edit).
+      - if: env.HAS_TOKEN == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: apps/edge
+          preCommands: npx wrangler d1 migrations apply crewstrike --remote
+          command: deploy

@@ -10,7 +10,7 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
-  "ai": { "binding": "AI" },
+  "ai": { "binding": "AI", "remote": true },
   "d1_databases": [
     { "binding": "DB", "database_name": "crewstrike", "database_id": "edff5f7c-99b1-4fdd-a773-22cce135624c", "migrations_dir": "migrations" }
   ],
