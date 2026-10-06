@@ -168,7 +168,7 @@ export const TRAINING_STEPS: TrainingStep[] = [
   { kind: 'rings', text: 'Fly through the three rings', control: 'stick' },
   { kind: 'drone', text: 'Shoot the drone with the cannon', control: 'cannon' },
   { kind: 'flare', text: 'Missile! Fire a flare', control: 'flare' },
-  { kind: 'strike', text: 'In the zone: lock and fire a strike missile', control: 'strike' },
+  { kind: 'strike', text: 'Lock and fire a strike missile', control: 'strike' },
   { kind: 'done', text: 'Training complete', control: 'none' },
 ];
 

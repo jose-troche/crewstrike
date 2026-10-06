@@ -1,0 +1,36 @@
+/** Critical voice clips, pre-rendered once by tools/gen-voice.ts and shipped as static MP3s. */
+export const CLIPS = {
+  missile_left: 'Missile, left! Flares!',
+  missile_right: 'Missile, right! Flares!',
+  missile_behind: 'Missile, behind! Flares!',
+  missile_ahead: 'Missile, ahead! Flares!',
+  pull_up: 'Pull up!',
+  stall: 'Stall! Nose down!',
+  flares: 'Flares!',
+  locked: 'Locked!',
+  sam_lock: 'SAM lock!',
+  fighter_locking: 'Fighter locking on!',
+  heavy_damage: 'Heavy damage!',
+  fuel_low: 'Fuel low!',
+  bingo_fuel: 'Bingo fuel! Head home!',
+  strike_zone: 'Strike zone!',
+  strike_ready: 'Strike missile ready!',
+  strike_locked: 'Strike locked! Fire!',
+  target_destroyed: 'Target destroyed!',
+  head_home: 'Head home!',
+  fighters_closing: 'Fighters closing!',
+  drones: 'Drones inbound!',
+  flak: 'Flak!',
+  storm: 'Storm ahead!',
+  lightning: 'Lightning!',
+  hit: "We're hit!",
+  splash: 'Splash one!',
+  autopilot_off: 'Autopilot off.',
+  abort: 'Recommend abort!',
+  mission_complete: 'Mission complete!',
+  ejecting: 'Ejecting!',
+  out_of_missiles: 'Out of missiles!',
+} as const;
+
+export type ClipId = keyof typeof CLIPS;
+export const CLIP_IDS = Object.keys(CLIPS) as ClipId[];

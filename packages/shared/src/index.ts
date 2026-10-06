@@ -195,6 +195,8 @@ export interface Finding {
   ttlMs: number;
   /** Optional voice clip id for critical lines. */
   clip?: string;
+  /** Event-like finding: each occurrence counts, and repeats merge into "×N". */
+  repeat?: boolean;
 }
 
 export interface ConsoleLine {
