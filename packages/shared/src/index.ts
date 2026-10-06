@@ -288,3 +288,4 @@ export interface ScoreReq {
 }
 export interface LeaderboardRow { callsign: string; difficulty: DifficultyName; stars: number; score: number; durationS: number; createdAt: number }
 export interface BudgetRes { remaining: number; ceiling: number; used: number }
+export * from './prompts';
