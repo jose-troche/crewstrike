@@ -564,7 +564,7 @@ async function turnstileToken(siteKey: string): Promise<string | null> {
   }
   if (!w.turnstile) return null;
   const box = document.createElement('div');
-  box.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:100';
+  box.style.cssText = 'position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:100';
   document.body.append(box);
   return new Promise(resolve => {
     const done = (t: string | null): void => {
