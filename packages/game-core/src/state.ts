@@ -316,7 +316,11 @@ export function createGame(missionId: string, opts: StartOptions = {}): GameStat
   const [windFrom, windKt] = mission.weather.windKt;
   const toward = (windFrom + 180) * DEG;
   const windMs = windKt * 0.514;
-  const targetY = surfaceHeight(mission.terrain, mission.target.pos[0], mission.target.pos[2]);
+  const [tx, , tz] = mission.target.pos;
+  // A bridge deck sits at the valley rim, not on the river bed.
+  const targetY = mission.target.type === 'bridge'
+    ? Math.max(surfaceHeight(mission.terrain, tx - 350, tz), surfaceHeight(mission.terrain, tx + 350, tz))
+    : surfaceHeight(mission.terrain, tx, tz);
   const targetRadius = { radar_station: 60, warship: 110, bridge: 140, training_tower: 50 }[mission.target.type];
 
   const player: Player = {
