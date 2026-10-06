@@ -1,0 +1,31 @@
+{
+  "id": "radar-breaker",
+  "title": "Radar Breaker",
+  "brief": "Destroy the radar station on the ridge, then get out.",
+  "hard": "Two SAM sites cover the valley; terrain masking helps.",
+  "seed": 42,
+  "start": { "pos": [0, 1200, 0], "heading": 90 },
+  "target": { "type": "radar_station", "name": "radar station", "pos": [24000, 600, 3000], "hp": 2 },
+  "strikeZone": { "center": [24000, 0, 3000], "radius": 5000 },
+  "exit": { "center": [-2000, 0, -6000], "radius": 3000 },
+  "fightRange": 7000,
+  "enemies": [
+    { "type": "sam", "pos": [15000, 400, 6000] },
+    { "type": "sam", "pos": [20000, 500, -2000] },
+    { "type": "aaa", "pos": [25500, 0, 4200] },
+    { "type": "fighter", "count": 2, "spawn": { "phase": "fight" } }
+  ],
+  "weather": { "storms": [{ "pos": [12000, 0, -8000], "radius": 4000 }], "windKt": [270, 15], "clouds": 40 },
+  "terrain": {
+    "kind": "land", "seed": 42, "base": 60, "amp": 420, "scale": 7000,
+    "features": [
+      { "type": "hill", "pos": [24000, 3000], "radius": 2600, "height": 520 },
+      { "type": "hill", "pos": [18000, 9000], "radius": 4000, "height": 700 },
+      { "type": "hill", "pos": [9000, -3500], "radius": 3000, "height": 600 },
+      { "type": "valley", "from": [0, 0], "to": [21000, 2500], "width": 2200, "depth": 260 },
+      { "type": "flat", "pos": [15000, 6000], "radius": 500, "height": 400 },
+      { "type": "flat", "pos": [20000, -2000], "radius": 500, "height": 500 },
+      { "type": "flat", "pos": [24000, 3000], "radius": 300, "height": 620 }
+    ]
+  }
+}

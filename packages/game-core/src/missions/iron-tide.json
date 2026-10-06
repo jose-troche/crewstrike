@@ -1,0 +1,27 @@
+{
+  "id": "iron-tide",
+  "title": "Iron Tide",
+  "brief": "Sink the warship at sea, then fly back to the coast.",
+  "hard": "Ship guns and escort fighters; no terrain to hide behind.",
+  "seed": 7,
+  "start": { "pos": [0, 900, 0], "heading": 80 },
+  "target": { "type": "warship", "name": "warship", "pos": [23000, 0, -4000], "hp": 3 },
+  "strikeZone": { "center": [23000, 0, -4000], "radius": 5500 },
+  "exit": { "center": [-3000, 0, 5000], "radius": 3000 },
+  "fightRange": 9000,
+  "fuelKg": 1600,
+  "enemies": [
+    { "type": "ship", "pos": [19500, 0, -1500] },
+    { "type": "ship", "pos": [20500, 0, -7500] },
+    { "type": "fighter", "count": 1, "pos": [16000, 1800, -4000] },
+    { "type": "fighter", "count": 2, "spawn": { "phase": "fight" } }
+  ],
+  "weather": { "storms": [], "windKt": [200, 10], "clouds": 25 },
+  "terrain": {
+    "kind": "sea", "seed": 7, "base": -80, "amp": 40, "scale": 9000,
+    "features": [
+      { "type": "hill", "pos": [-3000, 5000], "radius": 3500, "height": 260 },
+      { "type": "hill", "pos": [-9000, 2000], "radius": 6000, "height": 500 }
+    ]
+  }
+}

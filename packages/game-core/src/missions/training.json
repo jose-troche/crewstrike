@@ -1,0 +1,16 @@
+{
+  "id": "training",
+  "title": "Training Flight",
+  "brief": "Fly the rings, shoot a drone, flare a missile, fire a strike missile.",
+  "hard": "Nothing here can really hurt you.",
+  "seed": 1,
+  "start": { "pos": [0, 800, 0], "heading": 0 },
+  "target": { "type": "training_tower", "name": "practice tower", "pos": [0, 0, -15000], "hp": 2 },
+  "strikeZone": { "center": [0, 0, -15000], "radius": 6000 },
+  "exit": { "center": [0, 0, 30000], "radius": 1000 },
+  "fightRange": 0,
+  "enemies": [],
+  "weather": { "storms": [], "windKt": [0, 0], "clouds": 20 },
+  "training": { "rings": [[0, 800, -1600], [250, 850, -3100], [0, 800, -4600]] },
+  "terrain": { "kind": "land", "seed": 3, "base": 40, "amp": 260, "scale": 8000, "features": [] }
+}

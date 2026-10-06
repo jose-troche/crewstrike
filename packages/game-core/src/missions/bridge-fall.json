@@ -1,0 +1,34 @@
+{
+  "id": "bridge-fall",
+  "title": "Bridge Fall",
+  "brief": "Drop the bridge on the supply road, then get home.",
+  "hard": "Drone swarms and anti-aircraft guns; a storm rolls in mid-mission.",
+  "seed": 1337,
+  "start": { "pos": [0, 1000, 0], "heading": 105 },
+  "target": { "type": "bridge", "name": "bridge", "pos": [21000, 120, 6000], "hp": 2 },
+  "strikeZone": { "center": [21000, 0, 6000], "radius": 5000 },
+  "exit": { "center": [-3000, 0, -5000], "radius": 3000 },
+  "fightRange": 8000,
+  "enemies": [
+    { "type": "drones", "count": 6, "pos": [11000, 900, 3000] },
+    { "type": "drones", "count": 6, "pos": [18000, 700, 8000], "spawn": { "phase": "fight" } },
+    { "type": "aaa", "pos": [19500, 0, 5200] },
+    { "type": "aaa", "pos": [22500, 0, 6800] },
+    { "type": "aaa", "pos": [21000, 0, 3800] },
+    { "type": "fighter", "count": 1, "spawn": { "phase": "strike" } }
+  ],
+  "weather": {
+    "storms": [{ "pos": [6000, 0, 16000], "radius": 4500, "vel": [20, -32], "spawn": { "phase": "fight" } }],
+    "windKt": [300, 22],
+    "clouds": 60
+  },
+  "terrain": {
+    "kind": "land", "seed": 1337, "base": 120, "amp": 520, "scale": 6500,
+    "features": [
+      { "type": "valley", "from": [21000, -30000], "to": [21000, 30000], "width": 1300, "depth": 420 },
+      { "type": "flat", "pos": [19500, 5200], "radius": 400, "height": 240 },
+      { "type": "flat", "pos": [22500, 6800], "radius": 400, "height": 240 },
+      { "type": "flat", "pos": [21000, 3800], "radius": 400, "height": 200 }
+    ]
+  }
+}
