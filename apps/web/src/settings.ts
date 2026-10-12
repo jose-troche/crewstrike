@@ -33,7 +33,8 @@ export interface Settings {
   vignette: boolean;
   fullRoll: boolean;
   invertPitch: boolean;
-  mouseSteer: boolean;
+  /** Cockpit tour reads each bubble aloud. */
+  tourNarration: boolean;
   reducedMotion: 'auto' | 'on' | 'off';
   keys: Record<Action, string[]>;
   callsign: string;
@@ -50,7 +51,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vignette: false,
   fullRoll: false,
   invertPitch: false,
-  mouseSteer: true,
+  tourNarration: false,
   reducedMotion: 'auto',
   keys: DEFAULT_KEYS,
   callsign: '',
@@ -79,6 +80,8 @@ export function loadSettings(): Settings {
   if (!raw) return structuredClone(DEFAULT_SETTINGS);
   try {
     const parsed = JSON.parse(raw) as Partial<Settings>;
+    // Older saves carry a retired mouse-steering flag; drop it.
+    delete (parsed as Record<string, unknown>).mouseSteer;
     return { ...structuredClone(DEFAULT_SETTINGS), ...parsed, keys: { ...DEFAULT_KEYS, ...(parsed.keys ?? {}) } };
   } catch {
     return structuredClone(DEFAULT_SETTINGS);
@@ -94,6 +97,13 @@ export function seenExplainer(): boolean {
 }
 export function markExplainerSeen(): void {
   safeSet('wm.seenExplainer', '1');
+}
+
+export function seenTour(): boolean {
+  return safeGet('wm.seenTour') === '1';
+}
+export function markTourSeen(): void {
+  safeSet('wm.seenTour', '1');
 }
 
 /** Anonymous player id kept in the browser; no accounts. */

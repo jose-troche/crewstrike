@@ -147,7 +147,8 @@ export class Hud {
     radarSec.append(rangeBtn);
     this.radar.canvas.addEventListener('pointerdown', e => {
       host.gesture();
-      if (!this.lastState) return;
+      // Tapping a contact is a touch shortcut; on desktop Tab picks targets.
+      if (!this.lastState || e.pointerType === 'mouse') return;
       const en = this.radar.enemyAt(this.lastState, e.clientX, e.clientY);
       if (en) host.selectTarget(en.id);
     });

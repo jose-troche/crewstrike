@@ -76,12 +76,12 @@ The jet always flies forward and banks into turns automatically, so steering is 
 
 ### 4.2 Controls by device
 
-| Action | Keyboard and mouse | Gamepad | Touch |
+| Action | Keyboard | Gamepad | Touch |
 | --- | --- | --- | --- |
-| Steer | Mouse or arrow keys | Left stick | Left virtual stick |
+| Steer | Arrow keys | Left stick | Left virtual stick |
 | Throttle | W / S | Right stick up and down | Slider on left edge |
 | Boost | Shift (hold) | Left trigger | Boost button |
-| Cannon | Space or left click (hold) | Right trigger | Fire button (hold) |
+| Cannon | Space (hold) | Right trigger | Fire button (hold) |
 | Heat-seeking missile | F | Right bumper | Missile button |
 | Strike missile | G | Y / Triangle | Strike button (appears in strike zone) |
 | Flares | E | Left bumper | Flare button |
@@ -92,7 +92,7 @@ The jet always flies forward and banks into turns automatically, so steering is 
 | Voice on or off | M | Menu | Speaker icon |
 | Pause | Esc | Start | Pause icon |
 
-All keys and buttons can be remapped.
+All keys and buttons can be remapped. On desktop the mouse never steers or fires: flying is keyboard (or gamepad) only, and the mouse is for menus and buttons. Tapping a radar contact to target it is touch-only; Tab does it on a keyboard.
 
 ### 4.3 Difficulty levers
 
@@ -313,10 +313,11 @@ The landing page is the cockpit itself, live and paused behind a three-card expl
 
 1. **Your mission.** A picture strip: your jet, enemies, target, exit zone. One line: "Fly in, destroy the target, get out."
 2. **Your AI crew.** The six agent icons around a cockpit sketch, each linked by a line to the gauges it owns. One line: "Six AI agents watch your instruments and tell you what matters."
-3. **Fly.** Control diagram for the device detected: keyboard and mouse, gamepad, or touch. Difficulty picker (Cadet preselected), then two buttons: "Training flight" and "Start mission".
+3. **Fly.** Control diagram for the device detected: keyboard, gamepad, or touch. Difficulty picker (Cadet preselected), then the buttons "Cockpit tour" (desktop only), "Training flight" and "Start mission".
 
 - Skip is always visible; the "?" button reopens the explainer later.
 - The explainer shows only on the first visit (remembered in the browser).
+- **Cockpit tour** (desktop) is a static lesson on a frozen cockpit. A spotlight moves across each instrument with a speech bubble beside it: gun sight, flying keys, objective, mission bar, speed and throttle, fuel, altitude, damage, weather, radar, threat ring, the weapons panel, then each weapon (cannon, heat-seeker, strike, flares) with a "When to use it" line, the crew console, crew strip, talking to the crew, autopilot, and a full key list. Key names come from the player's current key map. → or Enter moves on, ← goes back, Esc leaves, and R toggles **Read aloud** (speech synthesis, off by default, remembered). The threat-ring step stages an inbound missile so a red wedge shows. The last bubble offers "Start training flight". The main menu keeps a "Cockpit tour" button, highlighted until the tour has been seen once.
 - **Training flight** takes about 60 seconds: fly through three rings, shoot a drone, flare a missile, fire a strike missile. Each step is shown by an arrow and a highlighted control, not paragraphs.
 
 ## 13. Responsive UI

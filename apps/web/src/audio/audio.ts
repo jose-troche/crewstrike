@@ -222,6 +222,29 @@ export class AudioEngine {
     this.speak(text, urgent, false);
   }
 
+  /** Cockpit tour narration: replaces whatever is being read, at a calm pace. */
+  narrate(text: string): void {
+    this.log.push({ kind: 'speech', id: 'tour', text, at: performance.now() });
+    if (this.log.length > 50) this.log.shift();
+    if (this.muted || typeof speechSynthesis === 'undefined') return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1;
+      speechSynthesis.speak(u);
+    } catch {
+      // speech unavailable
+    }
+  }
+
+  stopSpeech(): void {
+    try {
+      if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+    } catch {
+      // speech unavailable
+    }
+  }
+
   speak(text: string, urgent: boolean, log = true): void {
     if (log) {
       this.log.push({ kind: 'speech', id: '', text, at: performance.now() });

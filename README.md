@@ -12,12 +12,12 @@ The full design lives in [`docs/`](docs/): the game design spec and the Cloudfla
 
 Fly in, destroy the target, get out. The magenta arrow at the screen edge always points to the objective, and the phase chip shows where you are: Ingress, Fight, Strike, Egress.
 
-| Action | Keyboard and mouse | Gamepad | Touch |
+| Action | Keyboard | Gamepad | Touch |
 | --- | --- | --- | --- |
-| Steer | Mouse or arrow keys | Left stick | Left-half virtual stick |
+| Steer | Arrow keys | Left stick | Left-half virtual stick |
 | Throttle | W / S | Right stick up and down | Slider on the left edge |
 | Boost | Shift (hold) | Left trigger | Boost |
-| Cannon | Space or left click (hold) | Right trigger | Fire (hold) |
+| Cannon | Space (hold) | Right trigger | Fire (hold) |
 | Heat-seeking missile | F | Right bumper | Missile |
 | Strike missile (lock, then fire) | G, G | Y / Triangle | Strike (in the zone) |
 | Flares | E | Left bumper | Flare |
@@ -30,7 +30,11 @@ Fly in, destroy the target, get out. The magenta arrow at the screen edge always
 | Explain instruments | H | | i button |
 | Accept a suggestion | Y | A | Tap it |
 
-Keys can be remapped in Settings. Difficulty is Cadet (flies itself if you want), Pilot, Ace, or Custom, where every lever is yours.
+Keys can be remapped in Settings. On desktop the mouse is only for menus and buttons; it never steers or fires.
+
+**New here?** On desktop, **Cockpit tour** in the main menu freezes the cockpit and walks through every gauge, weapon and key with a bubble each, including when to use each weapon. It can read the bubbles aloud (R).
+
+Difficulty is Cadet (flies itself if you want), Pilot, Ace, or Custom, where every lever is yours.
 
 **Talk to the crew.** Hold V (or press /) and say or type:
 

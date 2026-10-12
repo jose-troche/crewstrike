@@ -3,7 +3,8 @@ import { MISSIONS, MISSION_ORDER, PILOT, type DifficultyProfile } from '@crewstr
 import { AGENT_IDS, ZONE_OWNERS, type DifficultyName } from '@crewstrike/shared';
 import type { GameApp, UiState } from '../app';
 import { AGENT_ICON_PATHS, AGENT_NAMES } from '../hud/icons';
-import { ACTION_LABELS, DEFAULT_KEYS, keyLabel, type Action, type Palette } from '../settings';
+import { ACTION_LABELS, DEFAULT_KEYS, keyLabel, seenTour, type Action, type Palette } from '../settings';
+import { Tour } from './Tour';
 
 function useUi(app: GameApp): UiState {
   return useSyncExternalStore(app.ui.subscribe, app.ui.get);
@@ -112,7 +113,7 @@ function ControlsPicture({ device }: { device: UiState['device'] }): ReactNode {
     );
   }
   const rows: [string, string][] = [
-    ['Mouse / Arrows', 'Steer'], ['W / S', 'Throttle'], ['Shift', 'Boost'], ['Space / Click', 'Cannon'],
+    ['← → ↑ ↓', 'Steer and climb'], ['W / S', 'Throttle'], ['Shift', 'Boost'], ['Space', 'Cannon'],
     ['F', 'Heat-seeker'], ['G', 'Strike missile'], ['E', 'Flares'], ['R', 'Autopilot'], ['V hold / /', 'Talk / type to crew'],
   ];
   return (
@@ -160,6 +161,9 @@ function Explainer({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
           {card < 2 && <button type="button" className="btn primary" onClick={() => setCard(card + 1)}>Next</button>}
           {card === 2 && (
             <>
+              {ui.device !== 'touch' && (
+                <button type="button" className="btn" data-testid="explainer-tour" onClick={() => { app.closeExplainer(); app.updateSettings({ difficulty: diff }); app.startTour(); }}>Cockpit tour</button>
+              )}
               <button type="button" className="btn" onClick={() => { app.closeExplainer(); app.startMission('training', diff); }}>Training flight</button>
               <button type="button" className="btn primary" onClick={() => { app.closeExplainer(); app.startMission(ui.missionId, diff); }}>Start mission</button>
             </>
@@ -191,9 +195,13 @@ function Menu({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
       <DifficultyPicker value={ui.difficulty} onChange={d => app.updateSettings({ difficulty: d })} />
       <div className="row">
         <button type="button" className="btn primary" data-testid="start-mission" onClick={() => app.startMission(mission, ui.difficulty)}>Start mission</button>
+        {ui.device !== 'touch' && (
+          <button type="button" className={`btn ${seenTour() ? '' : 'new'}`} data-testid="tour-btn" onClick={() => app.startTour()}>Cockpit tour</button>
+        )}
         <button type="button" className="btn" onClick={() => app.startMission('training', ui.difficulty)}>Training flight</button>
         <button type="button" className="btn ghost" onClick={() => app.ui.set({ settingsOpen: true })}>Settings</button>
       </div>
+      {ui.device !== 'touch' && !seenTour() && <p className="menu-hint">New here? Take the cockpit tour first: every gauge, weapon and key, one at a time.</p>}
     </div>
   );
 }
@@ -347,7 +355,6 @@ function SettingsView({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
         </section>
         <section>
           <h3>Controls</h3>
-          {toggle('Mouse steering', s.mouseSteer, v => app.updateSettings({ mouseSteer: v }))}
           {toggle('Invert pitch', s.invertPitch, v => app.updateSettings({ invertPitch: v }))}
           <div className="keys">
             {(Object.keys(ACTION_LABELS) as Action[]).map(a => (
@@ -381,7 +388,7 @@ function RotatePrompt(): ReactNode {
 export function Root({ app }: { app: GameApp }): ReactNode {
   const ui = useUi(app);
   useEffect(() => {
-    app.hud.setDim(ui.screen !== 'playing');
+    app.hud.setDim(ui.screen !== 'playing' && ui.screen !== 'tour');
   }, [app, ui.screen]);
   if (ui.rotate) return <RotatePrompt />;
   return (
@@ -389,6 +396,7 @@ export function Root({ app }: { app: GameApp }): ReactNode {
       {ui.screen === 'menu' && !ui.explainer && !ui.settingsOpen && <Menu app={app} ui={ui} />}
       {ui.screen === 'paused' && !ui.explainer && !ui.settingsOpen && <PauseMenu app={app} ui={ui} />}
       {ui.screen === 'results' && ui.results && !ui.settingsOpen && <ResultsView app={app} ui={ui} />}
+      {ui.screen === 'tour' && !ui.explainer && !ui.settingsOpen && <Tour app={app} narrate={ui.settings.tourNarration} />}
       {ui.explainer && <Explainer app={app} ui={ui} />}
       {ui.settingsOpen && <SettingsView app={app} ui={ui} />}
     </>

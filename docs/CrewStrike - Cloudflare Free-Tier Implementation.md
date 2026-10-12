@@ -433,7 +433,7 @@ export interface ControlState {
 }
 ```
 
-- **Keyboard and mouse:** a remappable key map; the mouse steers relative to screen center.
+- **Keyboard:** a remappable key map. The mouse does not steer or fire; it only drives menus and buttons.
 - **Gamepad:** `navigator.getGamepads()` polled each frame, 0.12 dead zone.
 - **Touch:** pointer events; the left half is a floating virtual stick that starts where the thumb lands; buttons on the right; throttle slider on the left edge.
 

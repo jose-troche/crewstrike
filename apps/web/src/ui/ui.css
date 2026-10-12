@@ -93,3 +93,50 @@
 
 .rotate { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; gap: 12px; background: var(--bg); z-index: 100; font-size: 18px; font-weight: 700; }
 .rotate svg { margin: 0 auto; }
+
+.btn.new { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+.menu-hint { text-align: center; color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+/* ---- cockpit tour ---- */
+#ui-root > .tour { position: fixed; inset: 0; pointer-events: auto; }
+.tour kbd {
+  font-family: var(--mono); font-size: 0.85em; border: 1px solid var(--cyan); color: var(--cyan); border-radius: 5px;
+  padding: 0 5px; margin: 0 1px; white-space: nowrap; background: rgba(53, 224, 255, 0.08);
+}
+.tour-shade { position: fixed; inset: 0; background: rgba(2, 8, 14, 0.62); }
+.tour-spot {
+  position: fixed; border-radius: 12px; outline: 2px solid var(--cyan); box-shadow: 0 0 0 200vmax rgba(2, 8, 14, 0.62), 0 0 24px var(--cyan);
+  transition: left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease; pointer-events: none;
+}
+.tour-bubble {
+  position: fixed; width: min(380px, calc(100vw - 32px)); box-sizing: border-box; background: rgba(6, 18, 28, 0.97); color: var(--ink);
+  border: 1px solid var(--cyan); border-radius: 14px; padding: 12px 16px 12px; box-shadow: 0 16px 50px rgba(0, 0, 0, 0.6);
+  font-size: 15px; line-height: 1.45; transition: left 0.25s ease, top 0.25s ease;
+}
+.tour-bubble[data-step='keys'] { width: min(560px, calc(100vw - 32px)); }
+.tour-bubble::before {
+  content: ''; position: absolute; width: 14px; height: 14px; background: inherit; border: 1px solid var(--cyan); transform: rotate(45deg);
+}
+.tour-bubble[data-side='center']::before { display: none; }
+.tour-bubble[data-side='right']::before { left: -8px; top: calc(var(--arrow) - 7px); border-width: 0 0 1px 1px; }
+.tour-bubble[data-side='left']::before { right: -8px; top: calc(var(--arrow) - 7px); border-width: 1px 1px 0 0; }
+.tour-bubble[data-side='below']::before { top: -8px; left: calc(var(--arrow) - 7px); border-width: 1px 0 0 1px; }
+.tour-bubble[data-side='above']::before { bottom: -8px; left: calc(var(--arrow) - 7px); border-width: 0 1px 1px 0; }
+.tour-bubble h2 { margin: 4px 0 6px; font-size: 20px; color: var(--cyan); }
+.tour-bubble p { margin: 0 0 8px; }
+.tour-when { border-left: 3px solid var(--amber); padding: 4px 0 4px 10px; background: rgba(255, 182, 39, 0.08); border-radius: 0 8px 8px 0; }
+.tour-when b { color: var(--amber); }
+.tour-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tour-count { font: 700 12px var(--mono); color: var(--muted); letter-spacing: 0.08em; }
+.tour-voice {
+  background: transparent; border: 1px solid var(--panel-edge); color: var(--muted); border-radius: 8px; min-height: 32px; padding: 0 8px;
+  font: 600 13px var(--font); cursor: pointer;
+}
+.tour-voice.on { color: var(--cyan); border-color: var(--cyan); }
+.tour-voice:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.tour-nav { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.tour-nav .btn { min-height: 38px; padding: 0 12px; }
+.tour-nav .btn.primary kbd, .tour-nav .btn.primary { color: #041018; }
+.tour-spacer { flex: 1; }
+.tour-keys { margin: 6px 0 8px; }
+@media (prefers-reduced-motion: reduce) { .tour-spot, .tour-bubble { transition: none; } }

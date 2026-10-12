@@ -30,35 +30,21 @@ export class InputManager {
   private latched = new Set<Action>();
   private codeToActions = new Map<string, Action[]>();
   throttle: 0 | 1 | 2 = 1;
-  private mouse = { x: 0, y: 0, active: false, down: false, lastX: 0, lastY: 0 };
   private padPrev: boolean[] = [];
   private padAxisLatch = 0;
   touch: TouchControls | null = null;
   /** Test hooks may force controls for scripted runs. */
   override: Partial<ControlState> | null = null;
   enabled = false;
-  lastSource: 'keyboard' | 'mouse' | 'gamepad' | 'touch' = 'keyboard';
+  lastSource: 'keyboard' | 'gamepad' | 'touch' = 'keyboard';
   remapListener: ((code: string) => void) | null = null;
 
-  constructor(private settings: () => Settings, private cb: InputCallbacks, private stage: HTMLElement) {
+  /** Desktop flying is keyboard (or gamepad) only; the mouse never steers or fires. */
+  constructor(private settings: () => Settings, private cb: InputCallbacks) {
     this.rebuildMap();
     window.addEventListener('keydown', e => this.onKey(e, true));
     window.addEventListener('keyup', e => this.onKey(e, false));
     window.addEventListener('blur', () => this.held.clear());
-    stage.addEventListener('mousemove', e => this.onMouseMove(e));
-    stage.addEventListener('mousedown', e => {
-      cb.gesture();
-      if (e.button === 0 && this.enabled) {
-        this.mouse.down = true;
-        this.lastSource = 'mouse';
-      }
-    });
-    window.addEventListener('mouseup', () => {
-      this.mouse.down = false;
-    });
-    stage.addEventListener('mouseleave', () => {
-      this.mouse.active = false;
-    });
   }
 
   rebuildMap(): void {
@@ -102,7 +88,6 @@ export class InputManager {
         else if (a === 'throttleDown') this.throttle = Math.max(0, this.throttle - 1) as 0 | 1 | 2;
         else if (EDGE_ACTIONS.has(a)) this.latched.add(a);
         this.held.add(a);
-        if (a === 'up' || a === 'down' || a === 'left' || a === 'right') this.mouse.active = false;
       } else {
         if (a === 'pushToTalk' && this.held.has(a)) this.cb.pttEnd();
         this.held.delete(a);
@@ -118,22 +103,6 @@ export class InputManager {
     else if (a === 'accept') this.cb.accept();
   }
 
-  private onMouseMove(e: MouseEvent): void {
-    if (!this.settings().mouseSteer || !this.enabled) return;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const nx = (e.clientX - w / 2) / (Math.min(w, h) * 0.35);
-    const ny = (e.clientY - h / 2) / (Math.min(w, h) * 0.35);
-    // Only take over after a real movement so a resting mouse never steers.
-    if (!this.mouse.active && Math.hypot(e.clientX - this.mouse.lastX, e.clientY - this.mouse.lastY) < 24) return;
-    this.mouse.lastX = e.clientX;
-    this.mouse.lastY = e.clientY;
-    this.mouse.active = true;
-    this.mouse.x = clamp(nx, -1, 1);
-    this.mouse.y = clamp(ny, -1, 1);
-    this.lastSource = 'mouse';
-  }
-
   /** Simulate a pressed action (used by touch buttons and commands). */
   press(a: Action): void {
     if (a === 'throttleUp') this.throttle = Math.min(2, this.throttle + 1) as 0 | 1 | 2;
@@ -144,8 +113,6 @@ export class InputManager {
   resetHeld(): void {
     this.held.clear();
     this.latched.clear();
-    this.mouse.down = false;
-    this.mouse.active = false;
   }
 
   private gamepad(c: ControlState): void {
@@ -198,13 +165,8 @@ export class InputManager {
     if (h.has('right')) c.stickX += 1;
     if (h.has('up')) c.stickY += 1;
     if (h.has('down')) c.stickY -= 1;
-    if (this.mouse.active && !(h.has('left') || h.has('right') || h.has('up') || h.has('down'))) {
-      const dz = (v: number): number => (Math.abs(v) < 0.06 ? 0 : v);
-      c.stickX += dz(this.mouse.x);
-      c.stickY += -dz(this.mouse.y);
-    }
     c.boost = h.has('boost');
-    c.cannon = h.has('cannon') || this.mouse.down;
+    c.cannon = h.has('cannon');
     c.pushToTalk = h.has('pushToTalk');
     for (const a of this.latched) {
       if (a === 'missile') c.missile = true;

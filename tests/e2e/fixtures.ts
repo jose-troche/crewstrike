@@ -24,7 +24,7 @@ export interface Snapshot {
   inCombat: boolean;
   own: { speed: number; heading: number; autopilot: boolean; throttle: number; agl: number; boost: boolean };
   fuel: { fraction: number };
-  weapons: { flares: number; missiles: number; strike: number; strikeAvailable: boolean; strikeLock: string; lock: string };
+  weapons: { rounds: number; flares: number; missiles: number; strike: number; strikeAvailable: boolean; strikeLock: string; lock: string };
   threats: { kind: string; km: number }[];
 }
 

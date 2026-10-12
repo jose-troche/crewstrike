@@ -1,5 +1,5 @@
 import {
-  MISSIONS, STEP, applyRoute, applySpawn, computeScore, createGame, cycleTarget, fire, setAutopilot, setBoost,
+  DEG, MISSIONS, STEP, add, applyRoute, applySpawn, computeScore, createGame, cycleTarget, fire, forward, scale, setAutopilot, setBoost,
   snapshot, step, type ControlState, type GameState, type ScoreResult, type SpawnEvent,
 } from '@crewstrike/game-core';
 import { handle, templateRecap, type RecapFacts } from '@crewstrike/nl';
@@ -14,12 +14,15 @@ import { Hud, type LayoutMode } from './hud/hud';
 import { InputManager } from './input/control-state';
 import { api } from './net/api';
 import {
-  keyLabel, loadSettings, markExplainerSeen, playerId, prefersReducedMotion, saveSettings, seenExplainer, type Action, type Settings,
+  keyLabel, loadSettings, markExplainerSeen, markTourSeen, playerId, prefersReducedMotion, saveSettings, seenExplainer, type Action, type Settings,
 } from './settings';
 import { Store } from './store';
 import { PhraseRouter, PushToTalk } from './voice/router';
 
-export type Screen = 'menu' | 'playing' | 'paused' | 'results';
+export type Screen = 'menu' | 'playing' | 'paused' | 'results' | 'tour';
+
+/** Staged props the cockpit tour shows on the frozen HUD. */
+export type TourDemo = 'threat' | null;
 
 export interface Results {
   missionId: string;
@@ -99,7 +102,7 @@ export class GameApp {
       pttStart: () => void this.pttStart(),
       pttEnd: () => void this.pttEnd(),
       gesture: () => this.audio.unlock(),
-    }, stage);
+    });
     this.hud = new Hud(uiRoot.parentElement ?? document.body, {
       help: () => this.openExplainer(),
       pause: () => this.togglePause(),
@@ -139,7 +142,7 @@ export class GameApp {
   // ---- settings and layout ----
 
   keyFor(action: string): string {
-    if (action === 'stick') return this.ui.get().device === 'touch' ? 'Stick' : 'Mouse/Arrows';
+    if (action === 'stick') return this.ui.get().device === 'touch' ? 'Stick' : 'Arrows';
     if (action === 'ptt') action = 'pushToTalk';
     if (action === 'target') action = 'nextTarget';
     if (action === 'throttle') return `${keyLabel(this.settings.keys.throttleUp[0] ?? 'KeyW')}/${keyLabel(this.settings.keys.throttleDown[0] ?? 'KeyS')}`;
@@ -274,6 +277,45 @@ export class GameApp {
     this.scene.load(this.state);
     this.hud.clearConsole();
     this.ui.set({ screen: 'menu', results: null });
+  }
+
+  // ---- cockpit tour: a frozen cockpit with one bubble per instrument ----
+
+  startTour(): void {
+    clearTimeout(this.endTimer);
+    this.running = false;
+    this.input.enabled = false;
+    this.input.resetHeld();
+    this.audio.silenceEngine();
+    const missionId = this.ui.get().missionId === 'training' ? 'radar-breaker' : this.ui.get().missionId;
+    this.state = createGame(missionId, { difficulty: this.settings.difficulty });
+    this.scene.load(this.state);
+    this.hud.clearConsole();
+    this.hud.localLine('wingman', 'Welcome aboard. Ask me anything.', 'info', 0);
+    this.ui.set({ screen: 'tour', explainer: false, settingsOpen: false, results: null });
+  }
+
+  /** Put a demo prop on the frozen cockpit (an inbound missile lights the threat ring). */
+  setTourDemo(demo: TourDemo): void {
+    const s = this.state;
+    s.missiles = s.missiles.filter(m => !m.id.startsWith('tour-'));
+    if (demo === 'threat') {
+      const p = s.player;
+      const pos = add(p.pos, scale(forward(p.heading - 130 * DEG, 0), 3200));
+      s.missiles.push({
+        id: 'tour-missile', kind: 'sam', owner: 'enemy', launcherId: null, pos, prevPos: [...pos], vel: [0, 0, 0],
+        heading: 0, pitch: 0, speed: 600, maxSpeed: 600, turnRate: 0, targetId: 'player', age: 0, life: 99, alive: true, arc: null, decoyed: false,
+      });
+    }
+  }
+
+  endTour(next: 'menu' | 'training'): void {
+    markTourSeen();
+    this.audio.stopSpeech();
+    this.setTourDemo(null);
+    if (next === 'training') return this.startMission('training', this.settings.difficulty);
+    this.hud.clearConsole();
+    this.ui.set({ screen: 'menu' });
   }
 
   openExplainer(): void {
