@@ -4,7 +4,7 @@ Oct 6, 2026 · @Jose
 
 ## 1. Summary and stack
 
-CrewStrike is a TypeScript browser game: the game, the HUD and all six AI agents run on the player's device, and one Cloudflare Worker serves it, answers strategic questions with Workers AI, meters a free daily AI budget and keeps scores. It implements the companion game design spec.
+CrewStrike is a TypeScript browser game: the game, the HUD and all six AI agents run on the player's device, and one Cloudflare Worker serves it, answers strategic questions with Workers AI, meters a free daily AI budget and keeps scores. It implements the companion [Game Design and System Specification](CrewStrike%20-%20Game%20Design%20and%20System%20Specification.md), called "the spec" below.
 
 | Layer | Choice | Why |
 | --- | --- | --- |
@@ -17,6 +17,13 @@ CrewStrike is a TypeScript browser game: the game, the HUD and all six AI agents
 | Speech input | Browser `SpeechRecognition`; Whisper on Workers AI as fallback | Push-to-talk on every browser |
 | Edge | Hono on Workers, SQLite Durable Object, D1, Workers AI | All on the free plan |
 | Tests | Vitest for logic, Playwright for UI (local-first) | One runner family |
+
+**What the HUD is.** The HUD (heads-up display) is the flat layer of cockpit instruments that sits on top of the 3D view. It holds the twelve instruments from spec section 7: objective marker and phase chip, radar, threat ring, damage, fuel, speed and throttle, altitude, weapons, flares, weather, message console and mission bar. It also holds the crew strip of six agent icons.
+
+- **Built from HTML, not WebGL.** The HUD is ordinary DOM: a CSS grid of SVG gauges laid over the full-screen Three.js canvas. Text and lines stay sharp at any resolution, and the browser does the layout.
+- **Not drawn by React.** The game loop writes values straight into the DOM, and only when they change. Gauges refresh at 30 Hz; the crosshair and threat ring refresh at 60 Hz. React draws only the menus and the explainer, which are not real-time.
+- **One layout that reflows.** Named grid areas rearrange for the Wide, Compact, Touch and Rotate modes. The center area is kept clear for the crosshair at every size (section 8.1).
+- **Wired to the AI crew.** Every instrument carries a `data-zone` attribute. When an agent speaks, its zone glows in the urgency color, and tests use the same attribute as a stable selector (section 11.1).
 
 **TypeScript policy.** TypeScript is the preferred language for all code: game, workers, Worker, tools, tests and code-based config. Plain JavaScript files are not allowed (`allowJs: false`), and every package extends one strict base config. The only non-TypeScript files are those a platform requires: SQL migrations, `wrangler.jsonc`, GitHub Actions YAML.
 
@@ -35,13 +42,35 @@ CrewStrike is a TypeScript browser game: the game, the HUD and all six AI agents
 
 The main thread runs the game and draws it; a background worker runs the six agents ten times a second; the edge is touched only when a player asks a strategic question, finishes a mission or loads the leaderboard.
 
-&#91;embedded content: CrewStrike architecture · 3 on-device parts, 3 edge services\]
+```mermaid
+flowchart LR
+  subgraph Device["Player's device"]
+    Main["Main thread<br/>game core 60 Hz, Three.js, HUD,<br/>input, audio, grammar, advisor"]
+    Worker["Agent worker<br/>six agents + Wingman, 10 Hz"]
+    Local["On-device model<br/>(Tier 0, optional)"]
+    Main -- "snapshot ~2 KB, 10 Hz" --> Worker
+    Worker -- "line, agent, zones, level" --> Main
+    Main -. "phrase reason" .-> Local
+  end
+  subgraph Edge["Cloudflare edge"]
+    API["Worker (Hono)<br/>/api/* + static assets"]
+    Budget["BudgetDO<br/>neuron ledger, rate limits"]
+    AI["Workers AI<br/>Llama 3.1 8B, Whisper"]
+    D1[("D1<br/>scores")]
+    API --> Budget
+    API --> AI
+    API --> D1
+  end
+  Main -. "advice, recap, STT fallback, scores" .-> API
+```
+
+*CrewStrike architecture: 3 on-device parts, 3 edge services. Dashed lines are optional or network calls.*
 
 Instant commands, tactical answers and every alert stay in the browser; only strategic phrasing, speech fallback and scores cross the dashed line.
 
 - **Main thread:** fixed-step game core (60 Hz) with render interpolation, Three.js scene, HUD overlay, input, audio. Keeping the game here gives the lowest input-to-screen delay.
 - **Agent worker:** receives a compact snapshot (about 2 KB) by `postMessage` at 10 Hz and returns messages and glow events. Agents are advisory, so they live off the main thread and can never cost a frame.
-- **No shared memory.** Unlike the first prototype, nothing uses `SharedArrayBuffer`, so no cross-origin isolation headers are needed.
+- **No shared memory.** A 2 KB snapshot at 10 Hz is cheap to copy with `postMessage`, so nothing uses `SharedArrayBuffer` and the site needs no cross-origin isolation headers.
 - **Edge:** Workers Static Assets for the game files (free, unmetered), one Worker for `/api/*`, a `BudgetDO` for the AI ledger and rate limits, Workers AI for strategic phrasing and recaps, and D1 for scores. No R2 and no KV.
 
 ## 3. Free-tier budget
@@ -66,7 +95,7 @@ Rates are Llama 3.1 8B fast: 4,119 neurons per million input tokens, 34,868 per 
 | D1 rows written | 100,000 per day | About 2 | About 50,000 |
 | D1 rows read | 5 million per day | About 100 (leaderboard) | About 50,000 |
 
-Open question carried over: confirm in week 1 that `llama-3.1-8b-instruct-fast` (JSON Mode list) and `llama-3.1-8b-instruct-fp8-fast` (pricing table) are the same model and rate.
+**Open question:** Cloudflare's pricing table lists `@cf/meta/llama-3.1-8b-instruct-fp8-fast`, while the [JSON Mode](https://developers.cloudflare.com/workers-ai/features/json-mode/) list names `@cf/meta/llama-3.1-8b-instruct-fast`. Confirm in week 1 that they are the same model and rate. If they are not, either use `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (on both lists, but several times the neurons per call, so re-cost the table above first) or request plain JSON and validate it in code.
 
 ## 4. Repository layout
 
@@ -99,13 +128,13 @@ crewstrike/
 │  └─ nl/                        # grammar, local answers, help cards, templates, advisor
 ├─ tools/gen-voice.ts            # renders critical voice clips once
 ├─ tests/e2e/                    # Playwright
-├─ docs/                         # spec.md, implementation.md
+├─ docs/                         # game design spec, this implementation doc
 └─ CLAUDE.md                     # conventions for Claude Code
 ```
 
 ## 5. Game core
 
-A fixed 60 Hz step drives a deliberately simple arcade model, and every assist from the spec's difficulty table is one field on a `DifficultyProfile`, so difficulty is data, not code paths.
+A fixed 60 Hz step drives a deliberately simple arcade model, and every assist from the spec's difficulty table (spec section 4.3) is one field on a `DifficultyProfile`, so difficulty is data, not code paths.
 
 ### 5.1 Loop
 
@@ -739,10 +768,11 @@ Four milestones follow the spec's roadmap, each ending in something playable on 
 | HUD crowded on small phones | Aiming area blocked | Center area reserved; compact and touch layouts; `layout.spec.ts` overlap check on every device project |
 | Weak phones drop frames | Choppy play | Dynamic resolution, shadows off in touch mode, low-poly assets |
 | AI budget drained by scripted abuse | Strategic phrasing offline | Turnstile, per-IP and per-session caps, 9,000 ceiling; the local advisor still answers with templates |
-| Model name or JSON mode mismatch | Advice calls fail | Week-1 check; fall back to plain JSON output validated in code |
+| Model name or JSON mode mismatch | Advice calls fail | Week-1 check (section 3); fall back to `llama-3.3-70b-instruct-fp8-fast` or plain JSON output validated in code |
 | No speech recognition in the browser | No voice commands | Whisper fallback route and the typed command bar |
 | Browser blocks audio until a click | Silent first alert | Audio unlocked on the first click of the explainer or the cockpit |
-| Free-plan limits change | Budget math drifts | Limits held in `vars`; `/api/budget` shows the live ledger; check pricing pages monthly |
+| Free-plan limits change | Budget math drifts | Limits held in `vars`; `/api/budget` shows the live ledger; check pricing pages monthly. Workers Paid ($5 per month minimum) is the upgrade path |
+| Workers Logs pricing changes on December 1, 2026 | Log costs on a paid plan | `head_sampling_rate` already 0.2 in `wrangler.jsonc`; review before that date |
 
 ## 14. Sources
 

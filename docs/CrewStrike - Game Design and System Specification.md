@@ -2,18 +2,18 @@
 
 Oct 6, 2026 · @Jose
 
-## 1. Vision and the pivot
+## 1. Vision
 
 CrewStrike is a fast, easy-to-fly arcade fighter game: fly a short mission, survive fighters and air defenses, destroy the target, and let a crew of six AI agents watch your gauges and tell you, in one short line, what matters right now.
 
-**Why we pivoted.** The first prototype's visuals worked and are kept. Everything else changes, because playtesters hit four walls:
+**What players need.** Four needs shape every design choice:
 
-| What players said | What changes |
+| Player need | How CrewStrike meets it |
 | --- | --- |
-| They couldn't connect the agents to the parts of the jet they run | Each agent owns a visible cockpit zone, wears an icon, and lights that zone when it speaks (section 9) |
-| The plane was hard to fly, and the goal was unclear | Arcade flight, assist levels from autopilot to full manual, and an objective marker that is always on screen |
-| Too many instruments, with no way to know what each is for | Twelve instruments at most, each answering one question, each with a one-line "?" |
-| Too much reading | Color, shape and gauges first; text is one short line at a time, and voice is optional |
+| See which AI agent looks after which part of the jet | Each agent owns a visible cockpit zone, wears an icon, and lights that zone when it speaks (section 9) |
+| Fly easily and always know the goal | Arcade flight, assist levels from autopilot to full manual, and an objective marker that is always on screen |
+| Know what each instrument is for | Twelve instruments at most, each answering one question, each with a one-line "?" |
+| Read as little as possible | Color, shape and gauges first; text is one short line at a time, and voice is optional |
 
 **Design pillars**
 
@@ -26,23 +26,23 @@ CrewStrike is a fast, easy-to-fly arcade fighter game: fly a short mission, surv
 
 **Non-goals for version 1:** real aircraft or weapon data (everything is arcade and generic), multiplayer, a story campaign, VR.
 
-## 2. Handoff summary: what carries over
+## 2. Key decisions
 
-This section condenses every decision from the first design session that still applies, so a new session can start from these two documents alone.
+These decisions frame both this spec and the companion implementation document.
 
-| Topic | Decision | Status |
-| --- | --- | --- |
-| Name | **CrewStrike**, repo `crewstrike`. Renamed from WINGMIND, which now names only the earlier simulator design (itself formerly SKYWARDEN); "Skyward" is a separate project | Renamed |
-| Working model | Claude writes spec and implementation docs; Jose commits them to the repo; Claude generates code, tests and deploys; Jose plays the deployed game and updates requirements | Kept |
-| Platform | Browser game on Cloudflare's free tier: Workers Static Assets, one Worker (Hono), Workers AI, SQLite-backed Durable Objects, D1 | Kept; R2 and replays dropped |
-| Compute split | Game loop and every real-time agent run in the browser; the edge only answers language questions, meters the budget and stores scores. A 60 Hz server tick would be 216,000 requests per player-hour against 100,000 free per day | Kept |
-| AI rule | Deterministic first, LLM second. Alerts are templates; the LLM never sits in a time-critical path; every number it says is checked against game state | Kept |
-| Inference tiers | Local grammar first, then on-device model (Chrome built-in AI), then the Workers AI free pool; OAuth-provider and bring-your-own-key tiers later (same pattern as Floorcraft) | Kept |
-| Budget | Workers AI's 10,000 neurons a day is the only binding limit; a Durable Object ledger enforces a 9,000 ceiling; Llama 3.1 8B fast in JSON mode | Kept, and cheaper: only strategic questions use the LLM |
-| Agent pattern | Typed bus, single-writer state, one arbiter with a fixed safety order, one voice for the pilot | Kept, simplified from 18 agents to 6 |
-| Language | TypeScript everywhere, strict, no plain JavaScript files | Kept |
-| Testing | Playwright, local-first on the dev machine; CI is optional, manual and never blocks a deploy; test hooks drive a seeded game; AI calls mocked | Kept, plus device projects for responsive checks |
-| Content stance | Generic, arcade, illustrative; no real tactics or weapon data | Kept |
+| Topic | Decision |
+| --- | --- |
+| Name | **CrewStrike**, repo `crewstrike` |
+| Working model | Claude writes spec and implementation docs; Jose commits them to the repo; Claude generates code, tests and deploys; Jose plays the deployed game and updates requirements |
+| Platform | Browser game on Cloudflare's free tier: Workers Static Assets, one Worker (Hono), Workers AI, a SQLite-backed Durable Object, D1 |
+| Compute split | Game loop and every real-time agent run in the browser; the edge only answers language questions, meters the budget and stores scores. A 60 Hz server tick would be 216,000 requests per player-hour against 100,000 free per day |
+| AI rule | Deterministic first, LLM second. Alerts are templates; the LLM never sits in a time-critical path; every number it says is checked against game state |
+| Inference tiers | The local grammar sits in front of every tier and needs none of them. Tier 0 is the browser's on-device model (Chrome built-in AI) when present; Tier 1 is the Workers AI free pool; Tier 2 (OAuth-linked model provider) and Tier 3 (player's own API key) come later |
+| Budget | Workers AI's 10,000 neurons a day is the only binding limit; a Durable Object ledger enforces a 9,000 ceiling; Llama 3.1 8B fast in JSON mode; only strategic questions and the mission recap use the LLM |
+| Agent pattern | Six agents on a typed bus, single-writer state, one arbiter with a fixed safety order, one voice for the pilot |
+| Language | TypeScript everywhere, strict, no plain JavaScript files |
+| Testing | Playwright, local-first on the dev machine, with device projects for responsive checks; CI is optional, manual and never blocks a deploy; test hooks drive a seeded game; AI calls mocked |
+| Content stance | Generic, arcade, illustrative; no real tactics or weapon data |
 
 ## 3. Core game loop and missions
 
@@ -202,7 +202,40 @@ Color tells you how urgent something is; shape and icon tell you what it is, so 
 
 Six agents fly with you, and each one visibly owns a zone of the cockpit: its icon sits on that zone, the zone glows when the agent speaks, and every message carries the same icon, so players connect "who said it" with "which gauge it's about" without being told.
 
-&#91;embedded content: Cockpit zones by owner agent · 6 agents, 12 instruments\]
+```mermaid
+flowchart LR
+  subgraph Radar["Radar (eye)"]
+    R1[Radar]
+    R2[Threat ring]
+  end
+  subgraph Weapons["Weapons (crosshair)"]
+    W1[Weapon cards]
+    W2[Flares]
+  end
+  subgraph Flight["Flight (wing)"]
+    F1[Damage]
+    F2[Fuel]
+    F3[Speed and throttle]
+    F4[Altitude]
+  end
+  subgraph Mission["Mission (flag)"]
+    M1[Objective marker and phase chip]
+    M2[Mission bar]
+  end
+  subgraph Weather["Weather (cloud)"]
+    X1[Weather gauge]
+  end
+  subgraph Wingman["Wingman (star)"]
+    C1[Message console and voice]
+  end
+  Radar --> Wingman
+  Weapons --> Wingman
+  Flight --> Wingman
+  Mission --> Wingman
+  Weather --> Wingman
+```
+
+*Cockpit zones by owner agent: 6 agents, 12 instruments. The five specialist agents post findings; Wingman alone speaks through the console.*
 
 In the game, zones use the urgency colors from section 8; the agent colors here only show ownership, which the game conveys with icons and the crew strip.
 
@@ -312,7 +345,7 @@ The whole game, including all six agents, runs in the browser; a single Cloudfla
 - **Browser:** game loop and rendering, HUD, input, audio, the six agents in a background worker, the local grammar, tactical answers and the deterministic advisor.
 - **Edge:** static hosting, one API Worker, Workers AI for strategic phrasing and mission recaps, a Durable Object budget ledger, and D1 for scores.
 
-The companion implementation document covers the build in TypeScript, the free-tier budget, Playwright tests and the responsive layout in detail.
+The companion [Cloudflare Free-Tier Implementation](CrewStrike%20-%20Cloudflare%20Free-Tier%20Implementation.md) document covers the build in TypeScript, the free-tier budget, Playwright tests and the responsive layout in detail.
 
 ## 15. Acceptance and roadmap
 
