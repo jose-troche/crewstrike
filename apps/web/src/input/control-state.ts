@@ -113,6 +113,7 @@ export class InputManager {
   resetHeld(): void {
     this.held.clear();
     this.latched.clear();
+    this.touch?.reset();
   }
 
   private gamepad(c: ControlState): void {

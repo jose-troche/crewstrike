@@ -128,6 +128,8 @@ html, body {
 /* Mission bar */
 .mission-bar { white-space: nowrap; display: flex; gap: 10px; align-items: center; font-family: var(--mono); font-variant-numeric: tabular-nums; min-height: 44px; }
 .mission-bar .stars { color: var(--amber); letter-spacing: 2px; }
+/* The results screen's big .score style must not leak into the HUD. */
+.mission-bar .score { font: 700 1em var(--mono); margin: 0; }
 
 /* Objective */
 .objective { white-space: nowrap; display: flex; gap: 8px; align-items: center; min-height: 44px; }
@@ -179,7 +181,7 @@ html, body {
 .radar { padding: 4px; border-radius: 50%; aspect-ratio: 1; width: clamp(110px, 24vh, 240px); }
 .hud[data-mode='touch'] .radar { width: clamp(84px, 25vh, 170px); }
 .radar canvas { width: 100%; height: 100%; display: block; border-radius: 50%; }
-.radar .range { position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); font-size: 0.7em; min-height: 44px; min-width: 44px; padding: 0 6px; background: transparent; border: none; }
+.radar .range { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 0.7em; min-height: 44px; min-width: 44px; padding: 0 6px; background: transparent; border: none; }
 .radar .range::before { content: ''; position: absolute; inset: 11px 0; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 8px; z-index: -1; }
 
 /* Aim area: reserved for crosshair and threat ring */
@@ -267,7 +269,7 @@ html, body {
 .wcard .lock[data-lock='seeking'] { color: var(--amber); }
 .wcard .lock[data-lock='locked'] { color: var(--green); }
 .keycap { font-family: var(--mono); font-size: 0.65em; border: 1px solid var(--muted); border-radius: 4px; padding: 0 4px; color: var(--muted); }
-.hud[data-mode='touch'] .keycap { display: none; }
+.hud[data-mode='touch'] .keycap, .hud[data-mode='phone'] .keycap { display: none; }
 .flares { display: flex; flex-wrap: wrap; gap: 3px; width: clamp(100px, 12vw, 170px); padding: 5px 6px; align-items: center; }
 .flares i { width: 7px; height: 7px; border-radius: 50%; background: var(--white); display: block; }
 .flares i.used { background: rgba(255, 255, 255, 0.15); }
@@ -333,10 +335,29 @@ html, body {
 .stick-base.on { display: block; }
 .stick-knob { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; border-radius: 50%; background: rgba(53, 224, 255, 0.45); transform: translate(-50%, -50%); }
 .touch-fire {
-  grid-area: fire; justify-self: end; align-self: end; display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: 52px 52px;
+  grid-area: fire; justify-self: end; align-self: end; display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: 52px 64px;
   grid-template-areas: 'flare missile strike' 'boost cannon cannon'; gap: 5px; pointer-events: auto; z-index: 3;
 }
-.tbtn { width: 52px; height: 52px; border-radius: 50%; background: rgba(6, 18, 28, 0.6); border: 2px solid var(--panel-edge); font-size: 11px; font-weight: 800; touch-action: none; padding: 0; }
+.tbtn {
+  width: 52px; height: 52px; border-radius: 50%; background: rgba(6, 18, 28, 0.6); border: 2px solid var(--panel-edge); font-size: 11px; font-weight: 800;
+  touch-action: none; padding: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  -webkit-tap-highlight-color: transparent; transition: transform 0.06s, background 0.06s;
+}
+.tbtn .tb-ico { width: 40%; height: 40%; }
+.tbtn .tb-name { font-size: 0.82em; letter-spacing: 0.04em; line-height: 1; }
+.tbtn .tb-count:empty { display: none; }
+.tbtn .tb-count {
+  position: absolute; top: -5px; right: -5px; min-width: 18px; padding: 1px 4px; border-radius: 9px; box-sizing: border-box; font: 800 10px/1.2 var(--mono);
+  background: rgba(4, 12, 20, 0.92); border: 1px solid var(--panel-edge); color: var(--white);
+}
+.tbtn.empty .tb-count { color: var(--red); border-color: var(--red); }
+.tbtn.empty { opacity: 0.45; }
+.tbtn.down { transform: scale(0.94); }
+.tbtn-missile[data-lock='seeking'] { border-color: var(--amber); }
+.tbtn-missile[data-lock='locked'] { border-color: var(--green); box-shadow: 0 0 12px var(--green); }
+.tbtn-strike[data-lock='locking'], .tbtn-strike[data-lock='seeking'] { border-color: var(--amber); }
+.tbtn-strike[data-lock='locked'] { border-color: var(--green); box-shadow: 0 0 12px var(--green); }
+.tbtn.off { opacity: 0.32; border-color: var(--panel-edge); color: var(--muted); }
 .tbtn-flare { grid-area: flare; }
 .tbtn-missile { grid-area: missile; }
 .tbtn-strike { grid-area: strike; }
@@ -345,13 +366,12 @@ html, body {
 .tbtn.down { background: rgba(53, 224, 255, 0.35); }
 .tbtn-cannon { width: 64px; height: 64px; border-color: var(--cyan); }
 .tbtn-strike { border-color: var(--magenta); color: var(--magenta); }
-.tbtn.hidden { visibility: hidden; }
 .touch-throttle { position: fixed; left: max(4px, env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; z-index: 3; pointer-events: auto; }
 .touch-throttle .notch { width: 44px; height: 44px; border-radius: 10px; background: rgba(6, 18, 28, 0.6); border: 1px solid var(--panel-edge); font-weight: 800; }
 .touch-throttle .notch.active { border-color: var(--cyan); color: var(--cyan); }
 .touch-utility { grid-area: stick; align-self: end; justify-self: start; display: flex; gap: 6px; pointer-events: auto; z-index: 3; margin-left: 52px; }
 .ubtn { border-radius: 10px; background: rgba(6, 18, 28, 0.6); border: 1px solid var(--panel-edge); font-weight: 800; }
-.hud:not([data-mode='touch']) .touch-only { display: none !important; }
+.hud:not([data-mode='touch']):not([data-mode='phone']) .touch-only { display: none !important; }
 
 /* Touch: bottom-center cell holds the top-bar buttons and mission bar stacked, objective at its right. */
 .hud[data-mode='touch'] .area-mission { flex-direction: column; align-items: flex-start; justify-self: start; align-self: end; flex-wrap: nowrap; gap: 4px; }
@@ -363,3 +383,117 @@ html, body {
 
 /* HUD panels sit above the full-height touch stick zone so their buttons stay tappable. */
 .hud > [class*='area-'] { position: relative; z-index: 2; }
+
+/* ---- Phone: a landscape phone (touch, under 520 px tall). Every piece is placed from the
+   viewport height, so nothing scrolls or falls off. Left thumb flies, right thumb fights. ---- */
+.hud[data-mode='phone'] {
+  --T: max(6px, env(safe-area-inset-top));
+  --R: max(8px, env(safe-area-inset-right));
+  --B: max(6px, env(safe-area-inset-bottom));
+  --L: max(8px, env(safe-area-inset-left));
+  --u: clamp(46px, 15dvh, 60px);
+  --radar: clamp(84px, 31dvh, 136px);
+  --aim: min(28dvh, 24vw);
+  display: block; padding: 0; font-size: clamp(10px, 3.4dvh, 13px);
+}
+.hud[data-mode='phone'] :is(.area-mission, .area-left, .area-right, .area-weapons) { display: contents; }
+.hud[data-mode='phone'] :is(.area-radar, .area-weather, .area-objective, .mission-bar, .topbar, .speed, .fuel, .altitude, .damage, .area-console, .crew-strip) {
+  position: fixed; z-index: 2; margin: 0;
+}
+.hud[data-mode='phone'] .panel:not(.radar) { padding: 3px 6px; border-radius: 9px; }
+.hud[data-mode='phone'] .label, .hud[data-mode='phone'] .legend, .hud[data-mode='phone'] .weapons, .hud[data-mode='phone'] .flares { display: none !important; }
+/* Gauges are look-only on a phone: a thumb landing on one starts the stick. */
+.hud[data-mode='phone'] [data-zone]:not([data-zone='radar']), .hud[data-mode='phone'] .console li { pointer-events: none; }
+.hud[data-mode='phone'] .aim-area { width: var(--aim); height: var(--aim); }
+
+/* Top-left: radar, weather beside it. */
+.hud[data-mode='phone'] .area-radar { left: var(--L); top: var(--T); width: var(--radar); }
+.hud[data-mode='phone'] .radar .range { left: auto; right: -18px; bottom: -8px; transform: none; font-size: 0.85em; }
+.hud[data-mode='phone'] .area-weather { left: calc(var(--L) + var(--radar) + 12px); top: var(--T); min-height: 30px; padding: 2px 8px; gap: 4px; }
+.hud[data-mode='phone'] .weather .wind { width: 16px; height: 16px; }
+
+/* Top-center: where to go, then fuel and score under it. */
+.hud[data-mode='phone'] .area-objective { left: 50%; top: var(--T); transform: translateX(-50%); min-height: 34px; padding: 2px 8px; gap: 6px; }
+.hud[data-mode='phone'] .objective .obj-arrow { width: 20px; height: 20px; }
+.hud[data-mode='phone'] .phase-chip { padding: 2px 7px; font-size: 0.75em; }
+.hud[data-mode='phone'] .fuel { right: calc(50% + 4px); top: calc(var(--T) + 40px); width: clamp(92px, 15vw, 132px); display: flex; align-items: center; gap: 6px; min-height: 26px; }
+.hud[data-mode='phone'] .fuel .big { font-size: 1em !important; min-width: 3ch; }
+.hud[data-mode='phone'] .fuel .bar { flex: 1; margin: 0; height: 9px; }
+.hud[data-mode='phone'] .mission-bar { left: calc(50% + 4px); top: calc(var(--T) + 40px); min-height: 26px; padding: 2px 8px; gap: 8px; font-size: 0.92em; }
+
+/* Top-right: system buttons, then the damage picture. */
+.hud[data-mode='phone'] .topbar { right: var(--R); top: var(--T); gap: 4px; }
+.hud[data-mode='phone'] .topbar .iconbtn, .hud[data-mode='phone'] .crew-strip .crew { width: 44px; height: 44px; padding: 0; background: rgba(6, 18, 28, 0.45); }
+.hud[data-mode='phone'] .crew-strip { right: calc(var(--R) + 3 * 44px + 2 * 4px + 4px); top: var(--T); gap: 4px; }
+.hud[data-mode='phone'] .crew-strip .crew[data-agent-icon], .hud[data-mode='phone'] .ai-status { display: none; }
+.hud[data-mode='phone'] .damage { right: var(--R); top: calc(var(--T) + 50px); width: 50px; padding: 2px 3px; }
+.hud[data-mode='phone'] .damage svg { max-height: calc(var(--u) * 0.95); }
+.hud[data-mode='phone'] .damage .big { font-size: 0.9em !important; }
+
+/* Speed and altitude flank the sight, like a real head-up display. */
+.hud[data-mode='phone'] :is(.speed, .altitude) { top: 50%; transform: translateY(-50%); width: 58px; gap: 3px; align-items: center; }
+.hud[data-mode='phone'] .speed { right: calc(50% + var(--aim) / 2 + 12px); }
+.hud[data-mode='phone'] .altitude { left: calc(50% + var(--aim) / 2 + 12px); }
+.hud[data-mode='phone'] :is(.speed, .altitude) .big { font-size: 1.2em; }
+.hud[data-mode='phone'] .tape .bar { height: clamp(26px, 13dvh, 56px); width: 8px; }
+.hud[data-mode='phone'] .speed .notches { display: none; }
+.hud[data-mode='phone'] .speed .boost { width: 100%; }
+
+/* Bottom-center, between the thumbs: the crew's lines (two at most) and any suggestion. */
+.hud[data-mode='phone'] .area-console {
+  left: calc(var(--L) + 32%); right: calc(var(--R) + 4.9 * var(--u) + 10px); bottom: var(--B); width: auto;
+  justify-content: flex-end; pointer-events: none; gap: 3px;
+}
+.hud[data-mode='phone'] .console { min-height: 0; }
+.hud[data-mode='phone'] .console li { min-height: 22px; padding: 2px 7px; font-size: 0.95em; }
+.hud[data-mode='phone'] .console li:nth-child(n + 3) { display: none; }
+/* A suggestion pushes the console down to its newest line, keeping the sight clear. */
+.hud[data-mode='phone'] .verdict.on ~ .console li:nth-child(n + 2) { display: none; }
+.hud[data-mode='phone'] .verdict { padding: 2px 6px; gap: 6px; flex-wrap: wrap; }
+.hud[data-mode='phone'] .verdict-reason { font-size: 0.85em; min-width: 8em; }
+.hud[data-mode='phone'] .verdict-action { pointer-events: auto; }
+/* Typing opens the phone keyboard over the bottom half, so the command bar sits at the top. */
+.hud[data-mode='phone'] .command { position: fixed; top: var(--T); left: 50%; transform: translateX(-50%); width: min(70vw, 460px); z-index: 30; pointer-events: auto; }
+.hud[data-mode='phone'] .command input { min-height: 44px; }
+.hud[data-mode='phone'] ~ .history { top: 56px; bottom: auto; max-height: calc(100dvh - 70px); }
+.hud[data-mode='phone'] ~ .training-hint { top: calc(50% - min(14dvh, 12vw) - 6px); transform: translate(-50%, -100%); padding: 4px 10px; font-size: 12px; }
+.hud[data-mode='phone'] ~ .explain-layer .zlabel { max-width: 160px; font-size: 11px; }
+.hud.dim[data-mode='phone'] :is(.area-left, .area-right, .area-mission) > *, .hud.dim[data-mode='phone'] :is(.touch-fire, .touch-throttle, .touch-utility) { opacity: 0.45; }
+
+/* Left thumb: the stick floats wherever it lands on the left half; throttle and comms sit under the radar. */
+.hud[data-mode='phone'] .touch-stick-zone { left: 0; top: 0; width: 50vw; height: 100%; }
+.hud[data-mode='phone'] .stick-base { width: calc(2.1 * var(--u)); height: calc(2.1 * var(--u)); }
+.hud[data-mode='phone'] .stick-knob { width: calc(0.95 * var(--u)); height: calc(0.95 * var(--u)); }
+.touch-stick-zone.ghost::before, .touch-stick-zone.ghost::after { position: absolute; left: 44%; top: 70%; transform: translate(-50%, -50%); pointer-events: none; }
+.touch-stick-zone.ghost::before {
+  content: ''; width: 104px; height: 104px; border-radius: 50%; border: 2px dashed rgba(53, 224, 255, 0.55);
+  background: radial-gradient(circle, rgba(53, 224, 255, 0.35) 0 22px, transparent 23px); animation: ghost 1.6s ease-in-out infinite alternate;
+}
+.touch-stick-zone.ghost::after { content: 'Left thumb: steer'; top: calc(70% + 66px); font-weight: 800; font-size: 12px; color: var(--cyan); white-space: nowrap; text-shadow: 0 1px 3px #000; }
+.touch-stick-zone.ghost:has(.stick-base.on)::before, .touch-stick-zone.ghost:has(.stick-base.on)::after { display: none; }
+@keyframes ghost { from { opacity: 0.55; } to { opacity: 1; } }
+.hud[data-mode='phone'] .touch-throttle { left: var(--L); top: calc(var(--T) + var(--radar) + 14px); transform: none; gap: 3px; }
+.hud[data-mode='phone'] .touch-throttle .notch { border-radius: 4px; }
+.hud[data-mode='phone'] .touch-throttle .notch:first-child { border-radius: 12px 12px 4px 4px; }
+.hud[data-mode='phone'] .touch-throttle .notch:last-child { border-radius: 4px 4px 12px 12px; }
+.hud[data-mode='phone'] .touch-throttle .notch.active { background: rgba(53, 224, 255, 0.18); }
+.hud[data-mode='phone'] .touch-utility {
+  position: fixed; left: calc(var(--L) + 44px + 14px); top: calc(var(--T) + var(--radar) + 14px); margin: 0; flex-direction: column; gap: 10px;
+}
+.hud[data-mode='phone'] .ubtn { width: 44px; height: 44px; border-radius: 50%; padding: 0; display: grid; place-items: center; font-size: 12px; -webkit-tap-highlight-color: transparent; }
+.ubtn svg { width: 20px; height: 20px; }
+.ubtn.down, .touch-throttle .notch.down { background: rgba(53, 224, 255, 0.3); }
+.ubtn[data-testid='touch-mic'].down { color: var(--red); border-color: var(--red); }
+
+/* Right thumb: Fire is home; Flare, Missile, Strike and Boost sit on an arc around it,
+   at least ten pixels apart, and a thumb can slide from one to the next. */
+.hud[data-mode='phone'] .touch-fire {
+  position: fixed; right: var(--R); bottom: var(--B); width: calc(4.9 * var(--u)); height: calc(3.3 * var(--u)); display: block;
+}
+.hud[data-mode='phone'] .tbtn { position: absolute; width: var(--u); height: var(--u); font-size: calc(var(--u) * 0.2); }
+.hud[data-mode='phone'] .tbtn-cannon { width: calc(1.45 * var(--u)); height: calc(1.45 * var(--u)); right: calc(0.475 * var(--u)); bottom: calc(0.375 * var(--u)); font-size: calc(var(--u) * 0.24); border-width: 3px; background: rgba(53, 224, 255, 0.14); }
+.hud[data-mode='phone'] .tbtn-flare { right: calc(2.3 * var(--u)); bottom: calc(0.35 * var(--u)); }
+.hud[data-mode='phone'] .tbtn-missile { right: calc(2 * var(--u)); bottom: calc(1.8 * var(--u)); }
+.hud[data-mode='phone'] .tbtn-strike { right: calc(0.5 * var(--u)); bottom: calc(2.2 * var(--u)); }
+.hud[data-mode='phone'] .tbtn-boost { right: calc(3.8 * var(--u)); bottom: calc(0.25 * var(--u)); }
+.hud[data-mode='phone'] .tbtn.down { background: rgba(53, 224, 255, 0.38); }

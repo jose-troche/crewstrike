@@ -13,7 +13,18 @@ import type { GameScene } from '../game/scene';
 import { TouchControls, type TouchCallbacks } from '../input/touch';
 import './hud.css';
 
-export type LayoutMode = 'wide' | 'compact' | 'touch' | 'rotate';
+export type LayoutMode = 'wide' | 'compact' | 'touch' | 'phone' | 'rotate';
+
+/** Key names in crew lines, as the buttons a touch pilot sees. */
+const TOUCH_WORDS: [RegExp, string][] = [
+  [/\bPress G twice\b/g, 'Tap Strike twice'], [/\bPress G\b/g, 'Tap Strike'], [/\bpress G\b/g, 'tap Strike'],
+  [/\bPress F\b/g, 'Tap Missile'], [/\bpress F\b/g, 'tap Missile'], [/\bPress R\b/g, 'Tap AP'],
+  [/\bPress E\b/g, 'Tap Flare'], [/\bpress E\b/g, 'tap Flare'], [/Press \/ or hold V to ask/g, 'Hold the mic to ask'],
+];
+
+export function forTouch(text: string): string {
+  return TOUCH_WORDS.reduce((t, [re, to]) => t.replace(re, to), text);
+}
 
 export interface HudHost extends TouchCallbacks {
   help(): void;
@@ -69,6 +80,8 @@ export class Hud {
   private glowTimers = new Map<Element, number>();
   private hitFlashAt = -1;
   mode: LayoutMode = 'wide';
+  /** Show the resting stick (cockpit tour). */
+  ghostStick = false;
   history: ConsoleLine[] = [];
   private lines: ConsoleLine[] = [];
   private lastTick = 0;
@@ -261,6 +274,19 @@ export class Hud {
     this.attr(this.root, 'data-mode', mode);
   }
 
+  get touchMode(): boolean {
+    return this.mode === 'touch' || this.mode === 'phone';
+  }
+
+  /** The element a zone lives on right now: on phones the fire buttons carry the weapon counts. */
+  zoneEl(zone: HudZone): HTMLElement {
+    if (this.mode === 'phone') {
+      if (zone === 'weapons') return this.touch.fireCluster;
+      if (zone === 'flares') return this.touch.buttons.flare;
+    }
+    return this.z[zone];
+  }
+
   setPaletteChanged(): void {
     this.palette = readPalette();
   }
@@ -317,6 +343,7 @@ export class Hud {
     }
     this.touch.setStrikeVisible(strikeAvailable(s));
     this.touch.setThrottleUi(s.player.throttle);
+    this.touch.setGhost(this.ghostStick || (!!s.training && s.training.step === 0 && s.t < 8));
     this.drawTraining(s);
   }
 
@@ -406,6 +433,7 @@ export class Hud {
     setCard('strike', p.strike, p.strike === 0 ? 'red' : 'green', p.strikeLock, !strikeAvailable(s));
     setCard('flare', p.flares, p.flares === 0 ? 'red' : p.flares <= 3 ? 'amber' : 'green', 'none', p.flares === 0);
     this.attr(wp, 'data-level', p.missiles === 0 && p.rounds === 0 ? 'red' : p.rounds < 100 || p.missiles === 0 ? 'amber' : 'green');
+    this.touch.setWeapons({ cannon: p.rounds, missile: p.missiles, strike: p.strike, flare: p.flares, lock: p.lockState, strikeLock: p.strikeLock });
     const fl = this.el.flares!;
     fl.querySelectorAll('i').forEach((pip, i) => pip.classList.toggle('used', i >= p.flares));
     this.attr(fl, 'data-level', p.flares === 0 ? 'red' : p.flares <= 3 ? 'amber' : 'green');
@@ -490,10 +518,12 @@ export class Hud {
   applyAgents(out: AgentOutput, gameNowMs: number): void {
     this.lines = out.lines;
     const ul = this.el.consoleList!;
+    const touch = this.touchMode;
     const html = out.lines.map(l => {
+      const text = touch ? forTouch(l.text) : l.text;
       const count = l.count > 1 ? `<span class="count">×${l.count}</span>` : '';
       const detail = l.detail ? `<span class="detail"> ${escapeHtml(l.detail)}</span>` : '';
-      return `<li data-agent="${l.agent}" data-level="${l.level}" data-key="${l.key}" data-at="${l.at}" data-ttl="${l.ttlMs}" title="${escapeHtml(l.detail ?? '')}">${agentIcon(l.agent, 16)}<span class="text">${escapeHtml(l.text)}</span>${count}${detail}</li>`;
+      return `<li data-agent="${l.agent}" data-level="${l.level}" data-key="${l.key}" data-at="${l.at}" data-ttl="${l.ttlMs}" title="${escapeHtml(l.detail ?? '')}">${agentIcon(l.agent, 16)}<span class="text">${escapeHtml(text)}</span>${count}${detail}</li>`;
     }).join('');
     if (this.cache.get(ul) !== html) {
       this.cache.set(ul, html);
@@ -518,7 +548,7 @@ export class Hud {
   /** Brief outline glow in the line's urgency color on every zone the speaking agent owns. */
   glow(zones: readonly HudZone[], level: Level): void {
     for (const zone of zones) {
-      const e = this.z[zone];
+      const e = this.zoneEl(zone);
       if (!e) continue;
       const prev = this.glowTimers.get(e);
       if (prev) clearTimeout(prev);
@@ -609,7 +639,7 @@ export class Hud {
     document.querySelectorAll('.highlight').forEach(e => e.classList.remove('highlight'));
     const legend = this.el.legend!;
     legend.innerHTML = '';
-    const touch = this.mode === 'touch';
+    const touch = this.touchMode;
     for (const id of ids) {
       const found = [...document.querySelectorAll<HTMLElement>(`[data-help="${id}"], [data-zone="${id}"]`)]
         .filter(e => e.offsetParent !== null || e.getClientRects().length > 0);
@@ -641,7 +671,7 @@ export class Hud {
     for (const id of AGENT_IDS) {
       const [ix, iy] = center(this.crew[id]);
       for (const zone of ZONE_OWNERS[id]) {
-        const e = this.z[zone];
+        const e = this.zoneEl(zone);
         if (!e || e.getClientRects().length === 0) continue;
         const [zx, zy] = center(e);
         const line = document.createElementNS(svgNs, 'line');
@@ -652,7 +682,7 @@ export class Hud {
         svg.append(line);
         const r = e.getBoundingClientRect();
         const label = h('div', { class: 'zlabel', 'data-zone-label': zone }, `<b>${AGENT_NAMES[id]}</b> · ${ZONE_HELP[zone]}`);
-        label.style.left = `${Math.min(window.innerWidth - 210, Math.max(4, r.left))}px`;
+        label.style.left = `${Math.min(window.innerWidth - 170, Math.max(4, r.left))}px`;
         label.style.top = `${Math.min(window.innerHeight - 40, Math.max(4, r.top + r.height / 2 - 12))}px`;
         layer.append(label);
       }

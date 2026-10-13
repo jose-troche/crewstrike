@@ -22,7 +22,14 @@ import { PhraseRouter, PushToTalk } from './voice/router';
 export type Screen = 'menu' | 'playing' | 'paused' | 'results' | 'tour';
 
 /** Staged props the cockpit tour shows on the frozen HUD. */
-export type TourDemo = 'threat' | null;
+export type TourDemo = 'threat' | 'stick' | null;
+
+/** What each action is called on a touch screen (training hints, tour, how-to). */
+const TOUCH_NAMES: Record<string, string> = {
+  stick: 'Stick', cannon: 'Fire', missile: 'Missile', strike: 'Strike', flare: 'Flare', boost: 'Boost', autopilot: 'AP',
+  throttle: 'F C S', throttleUp: 'F', throttleDown: 'S', pushToTalk: 'Mic', ptt: 'Mic', type: 'Keyboard', voice: 'Speaker',
+  pause: 'Pause', explain: 'i', nextTarget: 'Tap radar', target: 'Tap radar', accept: 'Suggestion',
+};
 
 export interface Results {
   missionId: string;
@@ -121,6 +128,7 @@ export class GameApp {
       pttStart: () => void this.pttStart(),
       pttEnd: () => void this.pttEnd(),
       gesture: () => this.audio.unlock(),
+      haptic: ms => this.haptic(ms),
     });
     this.input.touch = this.hud.touch;
     this.agents = TEST_HOOKS ? new InlineAgentHost() : new WorkerAgentHost();
@@ -142,7 +150,8 @@ export class GameApp {
   // ---- settings and layout ----
 
   keyFor(action: string): string {
-    if (action === 'stick') return this.ui.get().device === 'touch' ? 'Stick' : 'Arrows';
+    if (this.ui.get().device === 'touch') return TOUCH_NAMES[action] ?? action;
+    if (action === 'stick') return 'Arrows';
     if (action === 'ptt') action = 'pushToTalk';
     if (action === 'target') action = 'nextTarget';
     if (action === 'throttle') return `${keyLabel(this.settings.keys.throttleUp[0] ?? 'KeyW')}/${keyLabel(this.settings.keys.throttleDown[0] ?? 'KeyS')}`;
@@ -181,7 +190,7 @@ export class GameApp {
     const coarse = matchMedia('(pointer: coarse)').matches;
     let mode: LayoutMode;
     if (h > w && (coarse || w < 900)) mode = 'rotate';
-    else if (coarse) mode = 'touch';
+    else if (coarse) mode = h < 520 ? 'phone' : 'touch';
     else if (w >= 1280 && h > 720) mode = 'wide';
     else mode = 'compact';
     this.hud.setMode(mode);
@@ -211,6 +220,7 @@ export class GameApp {
     this.running = !this.ui.get().rotate;
     this.ui.set({ screen: this.running ? 'playing' : 'paused', missionId, difficulty, results: null, explainer: false, settingsOpen: false });
     this.audio.unlock();
+    this.enterFullscreen();
     if (!TEST_HOOKS) void this.ensureSession();
   }
 
@@ -240,6 +250,21 @@ export class GameApp {
     if (!b) return this.hud.setAiStatus('offline', 'AI: offline, local advisor only');
     if (b.remaining < 500) return this.hud.setAiStatus('low', `AI: ${b.remaining} neurons left today`);
     this.hud.setAiStatus(this.router.session ? 'edge' : 'template', `AI: edge model, ${b.remaining} neurons left today`);
+  }
+
+  /** Phones fly full screen and sideways; the browser bars would otherwise take a fifth of the height. */
+  enterFullscreen(): void {
+    if (TEST_HOOKS || !this.settings.fullscreen || this.ui.get().device !== 'touch' || document.fullscreenElement) return;
+    const root = document.documentElement;
+    if (typeof root.requestFullscreen !== 'function') return;
+    type Lockable = ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    root.requestFullscreen({ navigationUI: 'hide' })
+      .then(() => (screen.orientation as Lockable).lock?.('landscape'))
+      .catch(() => undefined);
+  }
+
+  haptic(ms: number): void {
+    if (this.settings.haptics && typeof navigator.vibrate === 'function') navigator.vibrate(ms);
   }
 
   pause(): void {
@@ -293,12 +318,14 @@ export class GameApp {
     this.hud.clearConsole();
     this.hud.localLine('wingman', 'Welcome aboard. Ask me anything.', 'info', 0);
     this.ui.set({ screen: 'tour', explainer: false, settingsOpen: false, results: null });
+    this.enterFullscreen();
   }
 
   /** Put a demo prop on the frozen cockpit (an inbound missile lights the threat ring). */
   setTourDemo(demo: TourDemo): void {
     const s = this.state;
     s.missiles = s.missiles.filter(m => !m.id.startsWith('tour-'));
+    this.hud.ghostStick = demo === 'stick';
     if (demo === 'threat') {
       const p = s.player;
       const pos = add(p.pos, scale(forward(p.heading - 130 * DEG, 0), 3200));
@@ -313,6 +340,7 @@ export class GameApp {
     markTourSeen();
     this.audio.stopSpeech();
     this.setTourDemo(null);
+    this.input.resetHeld();
     if (next === 'training') return this.startMission('training', this.settings.difficulty);
     this.hud.clearConsole();
     this.ui.set({ screen: 'menu' });
@@ -518,7 +546,7 @@ export class GameApp {
       return { kind: 'command', confirm: 'Accepted' };
     }
     const snap: GameSnapshot = snapshot(s);
-    const r = handle(text, snap, this.sink);
+    const r = handle(text, snap, this.sink, { touch: this.ui.get().device === 'touch' });
     switch (r.kind) {
       case 'command':
         this.hud.localLine('wingman', `${r.confirm}.`, 'info', now);

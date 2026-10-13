@@ -22,7 +22,7 @@ CrewStrike is a TypeScript browser game: the game, the HUD and all six AI agents
 
 - **Built from HTML, not WebGL.** The HUD is ordinary DOM: a CSS grid of SVG gauges laid over the full-screen Three.js canvas. Text and lines stay sharp at any resolution, and the browser does the layout.
 - **Not drawn by React.** The game loop writes values straight into the DOM, and only when they change. Gauges refresh at 30 Hz; the crosshair and threat ring refresh at 60 Hz. React draws only the menus and the explainer, which are not real-time.
-- **One layout that reflows.** Named grid areas rearrange for the Wide, Compact, Touch and Rotate modes. The center area is kept clear for the crosshair at every size (section 8.1).
+- **One layout that reflows.** Named grid areas rearrange for the Wide, Compact, Touch and Rotate modes; the Phone mode places each piece from the viewport height so nothing scrolls. The center area is kept clear for the crosshair at every size (section 8.1).
 - **Wired to the AI crew.** Every instrument carries a `data-zone` attribute. When an agent speaks, its zone glows in the urgency color, and tests use the same attribute as a stable selector (section 11.1).
 
 **TypeScript policy.** TypeScript is the preferred language for all code: game, workers, Worker, tools, tests and code-based config. Plain JavaScript files are not allowed (`allowJs: false`), and every package extends one strict base config. The only non-TypeScript files are those a platform requires: SQL migrations, `wrangler.jsonc`, GitHub Actions YAML.
@@ -399,7 +399,8 @@ A full-screen canvas sits under a CSS-grid HUD whose named areas rearrange per m
 | --- | --- | --- |
 | Wide | Landscape, width 1280 px or more, fine pointer | weather, mission, objective / speed, center, altitude / radar, console, weapons |
 | Compact | Landscape, 900–1279 px wide or under 720 px tall | mission, objective / speed, center, altitude / radar, console, weapons (weather folds into radar) |
-| Touch | `(pointer: coarse)` in landscape | radar, mission, weapons / ., center, . / stick, console, fire |
+| Touch | `(pointer: coarse)` in landscape, 520 px tall or more | radar, mission, weapons / ., center, . / stick, console, fire |
+| Phone | `(pointer: coarse)` in landscape, under 520 px tall | No grid: fixed pieces sized from `dvh` (see below) |
 | Rotate | Portrait | Full-screen rotate prompt; game paused |
 
 ```css
@@ -419,6 +420,15 @@ A full-screen canvas sits under a CSS-grid HUD whose named areas rearrange per m
 @media (prefers-reduced-motion: reduce) { .glow { animation: none; outline: 2px solid currentColor; } }
 ```
 
+**Phone mode.** A landscape phone is only 290–410 px tall, so instead of grid rows that can overflow, every piece is `position: fixed` from a few variables: `--u = clamp(46px, 15dvh, 60px)` (button size), `--radar = clamp(84px, 31dvh, 136px)` and `--aim = min(28dvh, 24vw)`. The split follows the thumbs:
+
+- **Top band:** radar and weather at top-left; objective at top-center with fuel and the mission bar under it; system buttons (i, ≡, ?, pause, speaker) at top-right with the damage picture below them.
+- **Around the sight:** speed on the left and altitude on the right, like a real head-up display.
+- **Left thumb (flies):** floating stick on the whole left half; throttle rocker (F, C, S) and Autopilot, mic and keyboard buttons in two columns under the radar.
+- **Right thumb (fights):** Fire (1.45 u) is home; Flare, Missile, Strike and Boost (1 u) sit on an arc around it, at least 10 px apart. The weapons and flares panels are hidden: each button carries a count badge, and Missile and Strike show lock state on their rim. Glows for those zones go to the buttons.
+- **Between the thumbs:** at most two console lines (one while a suggestion shows). The command bar moves to the top, above the soft keyboard.
+- Gauges ignore touches on a phone, so a thumb landing on one starts the stick.
+
 The center area is reserved for the crosshair and threat ring; no gauge may grow into it at any size.
 
 ### 8.2 Input
@@ -435,7 +445,8 @@ export interface ControlState {
 
 - **Keyboard:** a remappable key map. The mouse does not steer or fire; it only drives menus and buttons.
 - **Gamepad:** `navigator.getGamepads()` polled each frame, 0.12 dead zone.
-- **Touch:** pointer events; the left half is a floating virtual stick that starts where the thumb lands; buttons on the right; throttle slider on the left edge.
+- **Touch:** pointer events; the left half is a floating virtual stick that starts where the thumb lands, with a small radial dead zone, a gentle response curve (fine aim near the middle) and a base that trails the thumb past the rim so reversing is instant. Buttons are grouped into thumb pads: a touch goes to the nearest button within reach, a held thumb keeps its button through small wobbles, and a thumb can slide from one button to the next (Fire to Flare) without lifting. Tap buttons act on touch-down; the keyboard button acts on release so the soft keyboard can open. Buttons buzz briefly where `navigator.vibrate` exists (setting: "Buzz on button press"). Starting a flight or the tour on a touch device requests full screen and a landscape lock (setting: "Full screen when flying").
+- Crew lines and how-to answers name touch buttons on touch devices ("Tap Strike", not "Press G").
 
 ### 8.3 Performance
 
@@ -582,14 +593,14 @@ Playwright runs on the dev machine against a seeded, steppable game across five 
 | `desktop` | Chromium 1600 × 900 | Everything |
 | `laptop` | Chromium 1280 × 720 | Compact layout, HUD fit |
 | `tablet` | iPad Pro 11 landscape (WebKit, touch) | Touch layout and controls |
-| `phone` | Pixel 7 landscape (Chromium, touch) | Touch layout, frame rate smoke |
+| `phone` | Pixel 7 landscape (Chromium, touch) | Phone layout and controls, touch tour, frame rate smoke |
 | `portrait` | Pixel 7 portrait | Rotate prompt only |
 
 | Spec file | Covers |
 | --- | --- |
 | `onboarding.spec.ts` | Explainer on first visit only; skip; "?" reopens; difficulty picker; training flight starts |
-| `layout.spec.ts` | No gauge overlaps the center area; touch controls only in touch mode; touch targets at least 44 px; rotate prompt in portrait |
-| `controls.spec.ts` | Keyboard throttle and boost change speed; touch stick steers; gamepad mocked; autopilot hands back on stick input |
+| `layout.spec.ts` | No gauge overlaps the center area; every gauge and button fits on screen; touch controls only in touch modes; touch targets at least 44 px; on a phone the page never scrolls and thumb buttons are at least 10 px apart; rotate prompt in portrait |
+| `controls.spec.ts` | Keyboard throttle and boost change speed; touch stick steers; a thumb slides from Fire to Flare; an off-target touch lands on the nearest button; throttle rocker; gamepad mocked; autopilot hands back on stick input |
 | `hud.spec.ts` | Every instrument present with its "?" line; colors change green, amber, red at thresholds |
 | `crew.spec.ts` | A finding shows the agent icon, lights the crew strip and glows the owned zone |
 | `console.spec.ts` | Pace limit, combat quiet, red lines persist, dedupe |
@@ -765,7 +776,7 @@ Four milestones follow the spec's roadmap, each ending in something playable on 
 | --- | --- | --- |
 | Game still feels hard to fly | Players quit early | Cadet defaults, autopilot, auto-level; playtest every milestone; tune `DifficultyProfile` values, not code |
 | Motion sickness on some screens | Short sessions | Comfort camera, fixed field of view, no shake, vignette option, reduced-motion support |
-| HUD crowded on small phones | Aiming area blocked | Center area reserved; compact and touch layouts; `layout.spec.ts` overlap check on every device project |
+| HUD crowded on small phones | Aiming area blocked | Center area reserved; dedicated Phone layout sized from the viewport height; `layout.spec.ts` overlap and fit checks on every device project |
 | Weak phones drop frames | Choppy play | Dynamic resolution, shadows off in touch mode, low-poly assets |
 | AI budget drained by scripted abuse | Strategic phrasing offline | Turnstile, per-IP and per-session caps, 9,000 ceiling; the local advisor still answers with templates |
 | Model name or JSON mode mismatch | Advice calls fail | Week-1 check (section 3); fall back to `llama-3.3-70b-instruct-fp8-fast` or plain JSON output validated in code |

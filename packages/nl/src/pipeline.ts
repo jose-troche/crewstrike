@@ -11,7 +11,7 @@ import { matchTactical } from './tactical';
  * handles it. Everything here is local and synchronous; only the phrasing of a strategic reason
  * may later be improved by a model (see the web voice router).
  */
-export function handle(text: string, s: GameSnapshot, g: CommandSink): NlResult {
+export function handle(text: string, s: GameSnapshot, g: CommandSink, opts: { touch?: boolean } = {}): NlResult {
   const t = normalize(text);
   if (!t) return { kind: 'unknown', text: 'Say again?' };
   const b = bare(t);
@@ -20,7 +20,7 @@ export function handle(text: string, s: GameSnapshot, g: CommandSink): NlResult 
   if (confirm) return { kind: 'command', confirm };
 
   const card = matchHowTo(b);
-  if (card) return { kind: 'howto', text: card.answer, highlight: card.highlight };
+  if (card) return { kind: 'howto', text: (opts.touch && card.touch) || card.answer, highlight: card.highlight };
 
   const kind = classify(t);
   if (kind) return { kind: 'strategic', advice: advise(kind, s) };

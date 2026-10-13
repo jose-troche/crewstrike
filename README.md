@@ -15,7 +15,7 @@ Fly in, destroy the target, get out. The magenta arrow at the screen edge always
 | Action | Keyboard | Gamepad | Touch |
 | --- | --- | --- | --- |
 | Steer | Arrow keys | Left stick | Left-half virtual stick |
-| Throttle | W / S | Right stick up and down | Slider on the left edge |
+| Throttle | W / S | Right stick up and down | F / C / S rocker on the left |
 | Boost | Shift (hold) | Left trigger | Boost |
 | Cannon | Space (hold) | Right trigger | Fire (hold) |
 | Heat-seeking missile | F | Right bumper | Missile |
@@ -28,11 +28,13 @@ Fly in, destroy the target, get out. The magenta arrow at the screen edge always
 | Voice off, critical or all | M | Back | Speaker icon |
 | Pause | Esc | Start | Pause icon |
 | Explain instruments | H | | i button |
+
+On a phone the left thumb flies (stick, throttle, AP, mic) and the right thumb fights: Fire is the big home button, with Missile, Flare, Strike and Boost on an arc around it, each showing what is left. Slide your thumb between them without lifting.
 | Accept a suggestion | Y | A | Tap it |
 
 Keys can be remapped in Settings. On desktop the mouse is only for menus and buttons; it never steers or fires.
 
-**New here?** On desktop, **Cockpit tour** in the main menu freezes the cockpit and walks through every gauge, weapon and key with a bubble each, including when to use each weapon. It can read the bubbles aloud (R).
+**New here?** **Cockpit tour** in the main menu freezes the cockpit and walks through every gauge, weapon and key (or button, on a touch screen) with a bubble each, including when to use each weapon. On a phone you can try each control as it is shown and swipe between bubbles. It can read the bubbles aloud (R on a keyboard).
 
 Difficulty is Cadet (flies itself if you want), Pilot, Ace, or Custom, where every lever is yours.
 
@@ -109,7 +111,7 @@ Workers AI calls the real service even in local development. For routine work, r
 **UI tests (Playwright)** run locally against a seeded, steppable game exposed as `window.__wm`. This hook exists only in `VITE_TEST_HOOKS=1` builds and is stripped from production. The tests mock all AI calls. Projects are `desktop` (1600×900), `laptop` (1280×720), `tablet` (iPad Pro 11, WebKit), `phone` (Pixel 7 landscape) and `portrait`. The suite covers:
 
 - onboarding
-- layout: the aim area stays clear, everything fits on screen, touch targets are at least 44 px, the rotate prompt shows in portrait
+- layout: the aim area stays clear, everything fits on screen, touch targets are at least 44 px, the phone page never scrolls and its thumb buttons are 10 px apart, the rotate prompt shows in portrait
 - keyboard, touch and mocked-gamepad controls
 - HUD thresholds and explain mode
 - crew glow and status

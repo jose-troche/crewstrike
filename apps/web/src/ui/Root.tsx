@@ -106,9 +106,8 @@ function ControlsPicture({ device }: { device: UiState['device'] }): ReactNode {
   if (device === 'touch') {
     return (
       <div className="ctl-touch" aria-label="Touch controls">
-        <div><span className="ctl-big">◎</span><b>Left thumb</b> steer anywhere on the left half</div>
-        <div><span className="ctl-big">●</span><b>Fire</b> hold · <b>Missile</b> · <b>Flare</b> · <b>Strike</b> in the zone</div>
-        <div><span className="ctl-big">▮</span><b>Slider</b> on the left edge sets speed · <b>AP</b> autopilot</div>
+        <div><span className="ctl-big">◎</span><b>Left thumb flies:</b> steer anywhere on the left half · <b>F C S</b> throttle · <b>AP</b> autopilot · mic</div>
+        <div><span className="ctl-big">●</span><b>Right thumb fights:</b> hold <b>Fire</b> · <b>Missile</b>, <b>Flare</b>, <b>Strike</b>, <b>Boost</b> around it</div>
       </div>
     );
   }
@@ -161,9 +160,7 @@ function Explainer({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
           {card < 2 && <button type="button" className="btn primary" onClick={() => setCard(card + 1)}>Next</button>}
           {card === 2 && (
             <>
-              {ui.device !== 'touch' && (
-                <button type="button" className="btn" data-testid="explainer-tour" onClick={() => { app.closeExplainer(); app.updateSettings({ difficulty: diff }); app.startTour(); }}>Cockpit tour</button>
-              )}
+              <button type="button" className="btn" data-testid="explainer-tour" onClick={() => { app.closeExplainer(); app.updateSettings({ difficulty: diff }); app.startTour(); }}>Cockpit tour</button>
               <button type="button" className="btn" onClick={() => { app.closeExplainer(); app.startMission('training', diff); }}>Training flight</button>
               <button type="button" className="btn primary" onClick={() => { app.closeExplainer(); app.startMission(ui.missionId, diff); }}>Start mission</button>
             </>
@@ -195,13 +192,11 @@ function Menu({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
       <DifficultyPicker value={ui.difficulty} onChange={d => app.updateSettings({ difficulty: d })} />
       <div className="row">
         <button type="button" className="btn primary" data-testid="start-mission" onClick={() => app.startMission(mission, ui.difficulty)}>Start mission</button>
-        {ui.device !== 'touch' && (
-          <button type="button" className={`btn ${seenTour() ? '' : 'new'}`} data-testid="tour-btn" onClick={() => app.startTour()}>Cockpit tour</button>
-        )}
+        <button type="button" className={`btn ${seenTour() ? '' : 'new'}`} data-testid="tour-btn" onClick={() => app.startTour()}>Cockpit tour</button>
         <button type="button" className="btn" onClick={() => app.startMission('training', ui.difficulty)}>Training flight</button>
         <button type="button" className="btn ghost" onClick={() => app.ui.set({ settingsOpen: true })}>Settings</button>
       </div>
-      {ui.device !== 'touch' && !seenTour() && <p className="menu-hint">New here? Take the cockpit tour first: every gauge, weapon and key, one at a time.</p>}
+      {!seenTour() && <p className="menu-hint">New here? Take the cockpit tour first: every gauge, weapon and {ui.device === 'touch' ? 'button' : 'key'}, one at a time.</p>}
     </div>
   );
 }
@@ -238,38 +233,44 @@ function ResultsView({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
   return (
     <div className="modal-backdrop">
       <div className="modal results" role="dialog" aria-label="Mission results" data-testid="results">
-        <h2 data-outcome={r.score.outcome}>{headline}</h2>
-        {!r.training && <Stars n={r.score.stars} />}
-        {!r.training && <div className="score" data-testid="final-score">{r.score.score.toLocaleString('en-US')} pts <small>×{r.score.multiplier} {ui.difficulty}</small></div>}
-        {!r.training && (
-          <div className="breakdown">
-            <span>Target {b.target}</span><span>Kills {b.kills}</span><span>Damage {b.damage}</span><span>Time {b.time}</span><span>Leftover {b.leftover}</span>
+        <div className="results-body">
+          <div className="results-main">
+            <h2 data-outcome={r.score.outcome}>{headline}</h2>
+            {!r.training && <Stars n={r.score.stars} />}
+            {!r.training && <div className="score" data-testid="final-score">{r.score.score.toLocaleString('en-US')} pts <small>×{r.score.multiplier} {ui.difficulty}</small></div>}
+            {!r.training && (
+              <div className="breakdown">
+                <span>Target {b.target}</span><span>Kills {b.kills}</span><span>Damage {b.damage}</span><span>Time {b.time}</span><span>Leftover {b.leftover}</span>
+              </div>
+            )}
           </div>
-        )}
-        <ol className="recap" data-testid="recap" data-source={r.recapSource}>{r.recap.map(l => <li key={l}>{l}</li>)}</ol>
-        {canSubmit && (
-          <form className="row" onSubmit={async e => {
-            e.preventDefault();
-            if (!callsign.trim()) return;
-            setBusy(true);
-            await app.submitScore(callsign);
-            setBusy(false);
-          }}>
-            <input className="field" aria-label="Callsign" placeholder="Callsign" maxLength={16} value={callsign} pattern="[A-Za-z0-9 _\-]{1,16}" onChange={e => setCallsign(e.target.value)} />
-            <button type="submit" className="btn" disabled={busy || !callsign.trim()}>Submit score</button>
-          </form>
-        )}
-        {r.submitted && <p className="ok">Score saved.</p>}
-        {!r.training && ui.leaderboard.length > 0 && (
-          <table className="board" aria-label="Leaderboard">
-            <thead><tr><th>#</th><th>Callsign</th><th>Level</th><th>Stars</th><th>Score</th></tr></thead>
-            <tbody>
-              {ui.leaderboard.map((row, i) => (
-                <tr key={`${row.callsign}-${row.createdAt}-${i}`}><td>{i + 1}</td><td>{row.callsign}</td><td>{row.difficulty}</td><td>{'★'.repeat(row.stars)}</td><td>{row.score.toLocaleString('en-US')}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+          <div className="results-side">
+            <ol className="recap" data-testid="recap" data-source={r.recapSource}>{r.recap.map(l => <li key={l}>{l}</li>)}</ol>
+            {canSubmit && (
+              <form className="row" onSubmit={async e => {
+                e.preventDefault();
+                if (!callsign.trim()) return;
+                setBusy(true);
+                await app.submitScore(callsign);
+                setBusy(false);
+              }}>
+                <input className="field" aria-label="Callsign" placeholder="Callsign" maxLength={16} value={callsign} pattern="[A-Za-z0-9 _\-]{1,16}" onChange={e => setCallsign(e.target.value)} />
+                <button type="submit" className="btn" disabled={busy || !callsign.trim()}>Submit score</button>
+              </form>
+            )}
+            {r.submitted && <p className="ok">Score saved.</p>}
+            {!r.training && ui.leaderboard.length > 0 && (
+              <table className="board" aria-label="Leaderboard">
+                <thead><tr><th>#</th><th>Callsign</th><th>Level</th><th>Stars</th><th>Score</th></tr></thead>
+                <tbody>
+                  {ui.leaderboard.map((row, i) => (
+                    <tr key={`${row.callsign}-${row.createdAt}-${i}`}><td>{i + 1}</td><td>{row.callsign}</td><td>{row.difficulty}</td><td>{'★'.repeat(row.stars)}</td><td>{row.score.toLocaleString('en-US')}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
         <div className="row">
           <button type="button" className="btn" onClick={() => app.startMission(r.missionId, ui.difficulty)}>{r.training ? 'Fly again' : 'Retry'}</button>
           {r.training
@@ -356,7 +357,9 @@ function SettingsView({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
         <section>
           <h3>Controls</h3>
           {toggle('Invert pitch', s.invertPitch, v => app.updateSettings({ invertPitch: v }))}
-          <div className="keys">
+          {ui.device === 'touch' && toggle('Buzz on button press', s.haptics, v => app.updateSettings({ haptics: v }))}
+          {ui.device === 'touch' && toggle('Full screen when flying', s.fullscreen, v => app.updateSettings({ fullscreen: v }))}
+          {ui.device !== 'touch' && <div className="keys">
             {(Object.keys(ACTION_LABELS) as Action[]).map(a => (
               <div key={a} className="set-row"><span>{ACTION_LABELS[a]}</span>
                 <button type="button" className={`btn key ${remap === a ? 'listening' : ''}`} onClick={() => setRemap(a)}>
@@ -365,7 +368,7 @@ function SettingsView({ app, ui }: { app: GameApp; ui: UiState }): ReactNode {
               </div>
             ))}
             <button type="button" className="btn ghost" onClick={() => app.updateSettings({ keys: DEFAULT_KEYS })}>Reset keys</button>
-          </div>
+          </div>}
         </section>
       </div>
     </div>
@@ -396,7 +399,7 @@ export function Root({ app }: { app: GameApp }): ReactNode {
       {ui.screen === 'menu' && !ui.explainer && !ui.settingsOpen && <Menu app={app} ui={ui} />}
       {ui.screen === 'paused' && !ui.explainer && !ui.settingsOpen && <PauseMenu app={app} ui={ui} />}
       {ui.screen === 'results' && ui.results && !ui.settingsOpen && <ResultsView app={app} ui={ui} />}
-      {ui.screen === 'tour' && !ui.explainer && !ui.settingsOpen && <Tour app={app} narrate={ui.settings.tourNarration} />}
+      {ui.screen === 'tour' && !ui.explainer && !ui.settingsOpen && <Tour app={app} narrate={ui.settings.tourNarration} touch={ui.device === 'touch'} />}
       {ui.explainer && <Explainer app={app} ui={ui} />}
       {ui.settingsOpen && <SettingsView app={app} ui={ui} />}
     </>

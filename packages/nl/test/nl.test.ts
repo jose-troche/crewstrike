@@ -89,6 +89,12 @@ describe('tactical and how-to answers', () => {
     const f = handle('how do flares work?', snap(), sink());
     expect(f.kind === 'howto' && f.highlight).toContain('flares');
   });
+  it('how-to answers name touch buttons on a touch screen', () => {
+    const r = handle('How do I use the strike missile?', snap(), sink(), { touch: true });
+    expect(r.kind === 'howto' && r.text).toContain('tap Strike');
+    const fuel = handle('how does the fuel home line work?', snap(), sink(), { touch: true });
+    expect(fuel.kind === 'howto' && fuel.text).toContain('white line'); // no key in it, same answer
+  });
 });
 
 describe('strategic classifier and advisor', () => {

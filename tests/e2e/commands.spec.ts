@@ -16,7 +16,8 @@ test('typed instant commands act and confirm in one word', async ({ page, wm }, 
   expect((await wm.snapshot()).own.throttle).toBe(2);
 });
 
-test('tactical and how-to answers make no network request and highlight the right control', async ({ page, wm }) => {
+test('tactical and how-to answers make no network request and highlight the right control', async ({ page, wm }, info) => {
+  const touch = isTouch(info.project.name);
   const calls: string[] = [];
   page.on('request', r => { if (r.url().includes('/api/')) calls.push(r.url()); });
   await wm.start('radar-breaker', 'pilot');
@@ -27,8 +28,9 @@ test('tactical and how-to answers make no network request and highlight the righ
   await wm.ask('how many missiles?');
   await expect(page.getByTestId('console')).toContainText('6 missiles, 2 strike.');
   await wm.ask('How do I use the strike missile?');
-  await expect(page.getByTestId('console')).toContainText('press G to lock');
-  await expect(page.locator('[data-help="weapon-strike"]')).toHaveClass(/highlight/);
+  // A touch pilot hears about the button, not the key.
+  await expect(page.getByTestId('console')).toContainText(touch ? 'tap Strike to lock' : 'press G to lock');
+  await expect(page.locator(touch ? '[data-testid="touch-strike"]' : '[data-help="weapon-strike"]')).toHaveClass(/highlight/);
   await wm.ask('where is the target?');
   await expect(page.getByTestId('console')).toContainText(/Target \d+\.\d km, \d+ o'clock\./);
   expect(calls).toHaveLength(0);

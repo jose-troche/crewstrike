@@ -140,3 +140,49 @@
 .tour-spacer { flex: 1; }
 .tour-keys { margin: 6px 0 8px; }
 @media (prefers-reduced-motion: reduce) { .tour-spot, .tour-bubble { transition: none; } }
+
+/* Touch tour: the spotlit control stays live on "try it" steps; everything else is blocked. */
+#ui-root > .tour.live { pointer-events: none; }
+.tour.live .tour-bubble, .tour-block { pointer-events: auto; }
+.tour-block { position: fixed; }
+.tchip {
+  display: inline-block; font: 800 0.82em var(--font); letter-spacing: 0.04em; color: var(--ink); white-space: nowrap;
+  border: 1.5px solid var(--cyan); border-radius: 999px; padding: 0 7px; margin: 0 1px; background: rgba(53, 224, 255, 0.12);
+}
+.tour-try { border-left: 3px solid var(--cyan); padding: 4px 0 4px 10px; background: rgba(53, 224, 255, 0.08); border-radius: 0 8px 8px 0; font-weight: 700; }
+.tour-try b { color: var(--cyan); margin-right: 4px; }
+.tour-try[data-done='true'] { border-left-color: var(--green); background: rgba(61, 255, 138, 0.1); }
+.tour-try[data-done='true'] b { color: var(--green); }
+.tour-nav .btn.primary.nudge { animation: nudge 0.7s ease-in-out infinite alternate; }
+@keyframes nudge { from { box-shadow: 0 0 0 0 var(--cyan); } to { box-shadow: 0 0 0 5px rgba(53, 224, 255, 0.25); } }
+.tour[data-touch='true'] .tour-nav .btn { min-height: 44px; }
+
+/* Short screens (a phone on its side): a narrower, denser bubble that always fits without scrolling. */
+@media (max-height: 520px) {
+  .tour-bubble { width: min(330px, calc(100vw - 16px)); padding: 7px 12px 8px; font-size: 13px; line-height: 1.35; border-radius: 12px; }
+  .tour-bubble h2 { font-size: 16px; margin: 1px 0 4px; }
+  .tour-bubble p { margin: 0 0 5px; }
+  .tour-when, .tour-try { padding: 3px 0 3px 8px; }
+  .tour-voice { min-height: 30px; font-size: 12px; }
+  .tour-nav { margin-top: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .tour-nav .btn.primary.nudge { animation: none; } }
+
+/* Phone on its side: briefing and results fit on one screen, no scrolling. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .modal.explainer { width: min(720px, 100%); }
+  .explainer-top .link { min-height: 36px; }
+  .ctl-touch { gap: 3px; margin-bottom: 4px; font-size: 13px; line-height: 1.3; }
+  .ctl-touch .ctl-big { font-size: 15px; width: 20px; }
+  .modal.results { width: min(820px, 100%); }
+  .results-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); column-gap: 18px; align-items: start; }
+  .results h2 { margin-top: 0; }
+  .stars-big { font-size: 24px; }
+  .score { font-size: 20px; }
+  .breakdown { font-size: 12px; gap: 4px 10px; }
+  .recap { margin: 0 0 6px; font-size: 13px; line-height: 1.35; }
+  .board { margin: 4px 0; font-size: 12px; }
+  .board th, .board td { padding: 2px 5px; }
+  .board tbody tr:nth-child(n + 6) { display: none; }
+  .results .row { margin-top: 6px; }
+}

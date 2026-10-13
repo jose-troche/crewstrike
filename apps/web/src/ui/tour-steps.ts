@@ -1,18 +1,21 @@
 import type { TourDemo } from '../app';
+import type { TouchAction } from '../input/touch';
 
 /**
  * One cockpit-tour bubble. `{action}` in text becomes a keycap from the live key map
- * (`{stick}` and `{throttle}` are the arrow and W/S pairs).
+ * (`{stick}` and `{throttle}` are the arrow and W/S pairs); `[[Label]]` becomes a touch-button chip.
  */
 export interface TourStep {
   id: string;
-  /** CSS selector of the instrument to spotlight; null centers the bubble. */
+  /** CSS selector of the instrument to spotlight (several matches are framed together); null centers the bubble. */
   target: string | null;
   title: string;
   text: string[];
   /** Weapons and tricks: the situation to use it in. */
   when?: string;
   demo?: TourDemo;
+  /** Touch: the spotlit control stays live and the bubble ticks when the player uses it. */
+  try?: { action: TouchAction; text: string };
 }
 
 export const TOUR_STEPS: TourStep[] = [
@@ -195,4 +198,150 @@ export const TOUR_KEY_ROWS: [string, string][] = [
   ['missile', 'Heat-seeker'], ['nextTarget', 'Next target'], ['strike', 'Strike (lock, fire)'], ['flare', 'Flares'],
   ['autopilot', 'Autopilot'], ['pushToTalk', 'Talk (hold)'], ['type', 'Type to crew'], ['accept', 'Accept suggestion'],
   ['explain', 'Explain gauges'], ['voice', 'Voice mode'], ['pause', 'Pause'],
+];
+
+/** The same tour on a touch screen: buttons instead of keys, and a "try it" on every control. */
+export const TOUCH_TOUR_STEPS: TourStep[] = [
+  {
+    id: 'welcome', target: null, title: 'Cockpit tour',
+    text: [
+      'The game is frozen. We will walk through every instrument and button, and you can try each control.',
+      'Hold the phone sideways with both thumbs: the left thumb flies, the right thumb fights. Tap Next or swipe.',
+    ],
+  },
+  {
+    id: 'stick', target: '[data-testid="touch-stick"]', title: 'Left thumb: fly', demo: 'stick',
+    text: [
+      'Put your thumb down anywhere on the left half and slide. The stick appears where you touch.',
+      'Up climbs, down dives, left and right turn. Let go and the jet flies straight.',
+    ],
+    when: 'Small slides aim gently; push to the edge for a hard turn.',
+    try: { action: 'stick', text: 'Try it: slide the stick.' },
+  },
+  {
+    id: 'sight', target: '[data-testid="aim-area"]', title: 'Gun sight',
+    text: [
+      'The white W is your nose: bullets go where it points. The circle is the missile lock ring: amber while locking, green when locked.',
+      'Red brackets are enemy aircraft; red domes are ground sites.',
+    ],
+  },
+  {
+    id: 'speed', target: '[data-zone="speed"]', title: 'Speed',
+    text: ['Speed in knots, left of the sight. The cyan bar under it is boost energy.'],
+  },
+  {
+    id: 'throttle', target: '[data-testid="touch-throttle"]', title: 'Throttle',
+    text: ['Tap [[F]] fast, [[C]] cruise or [[S]] slow, or slide along it. The lit notch is your setting.'],
+    when: 'Slow down to turn tighter in a dogfight.',
+    try: { action: 'throttle', text: 'Try it: tap S, then C.' },
+  },
+  {
+    id: 'altitude', target: '[data-zone="altitude"]', title: 'Altitude',
+    text: ['Height above the ground in meters, right of the sight. Amber below 300 m, red below 150 m. Hitting the ground ends the mission.'],
+  },
+  {
+    id: 'objective', target: '[data-zone="objective"]', title: 'Objective',
+    text: [
+      'The chip shows the phase: INGRESS, FIGHT, STRIKE, then EGRESS.',
+      'The arrow points where to go and the number is how far. Magenta is the target, green the exit.',
+    ],
+  },
+  {
+    id: 'fuel', target: '[data-zone="fuel"]', title: 'Fuel',
+    text: ['Fuel left. The white home line is what you need to reach the exit. Amber: close to the line. Red: you may not make it home.'],
+    when: 'Near the line? Stop boosting and head for the exit.',
+  },
+  {
+    id: 'mission-bar', target: '[data-zone="mission-bar"]', title: 'Time, score, stars',
+    text: ['Mission clock, live score and stars. One star each for destroying the target, staying under 35% damage and finishing under 6 minutes.'],
+  },
+  {
+    id: 'damage', target: '[data-zone="damage"]', title: 'Damage',
+    text: ['Your jet from above. Nose, body, wings and tail turn amber, then red, as they take hits. At 100% you are shot down.'],
+  },
+  {
+    id: 'weather', target: '[data-zone="weather"]', title: 'Weather',
+    text: ['Which way the wind blows against your nose, how strong, and how far the nearest storm is.'],
+    when: 'Storms hide you from radar, but they shake the jet and lightning can hit you.',
+  },
+  {
+    id: 'radar', target: '[data-zone="radar"]', title: 'Radar',
+    text: [
+      'Top-down map, you in the middle, nose up. Red marks are enemies, domes are missile sites, magenta is the strike zone, green the exit.',
+      'Tap a red mark to target it. Tap [[20 km]] to change the range.',
+    ],
+  },
+  {
+    id: 'threat-ring', target: '[data-zone="threat-ring"]', title: 'Threat ring', demo: 'threat',
+    text: ['Wedges around the sight point at whatever is after you. Amber: a radar tracks you or a fighter attacks. Red with seconds: a missile is coming.'],
+    when: 'Red wedge? Tap Flare and turn hard, now. One is shown here.',
+  },
+  {
+    id: 'fire-cluster', target: '[data-testid="touch-fire"]', title: 'Right thumb: fight',
+    text: [
+      'Rest your right thumb on [[Fire]]. The other weapons sit on an arc around it, so you can roll your thumb to them without looking.',
+      'A touch goes to the nearest button, and you can slide between them without lifting. Badges count what is left.',
+    ],
+  },
+  {
+    id: 'cannon', target: '[data-testid="touch-cannon"]', title: 'Fire: cannon',
+    text: ['Hold to shoot: 600 rounds, about 30 seconds. Hits drones, fighters and ground sites. Best inside 2.5 km; put the W on the cyan lead circle.'],
+    when: 'Drones, close fighters and ground guns. It saves your missiles.',
+    try: { action: 'cannon', text: 'Try it: hold Fire.' },
+  },
+  {
+    id: 'missile', target: '[data-testid="touch-missile"]', title: 'Heat-seeking missile',
+    text: ['For aircraft within 6 km. Keep the enemy in the lock ring until the button rim turns green, then tap. You carry 6.'],
+    when: 'Fighters you cannot keep in the gun sight.',
+    try: { action: 'missile', text: 'Try it: tap Missile.' },
+  },
+  {
+    id: 'strike', target: '[data-testid="touch-strike"]', title: 'Strike missile',
+    text: ['Only for the mission target, inside the magenta strike zone; the button stays grey until then. Tap to lock; when the rim turns green, tap again to launch.'],
+    when: 'Once per run, in the STRIKE phase. You have 2.',
+  },
+  {
+    id: 'flare', target: '[data-testid="touch-flare"]', title: 'Flares',
+    text: ['Drops a pair of flares that pull missiles away. The badge counts the 16 presses you have.'],
+    when: 'Only when the threat ring shows a red wedge. Early flares are wasted.',
+    try: { action: 'flare', text: 'Try it: tap Flare.' },
+  },
+  {
+    id: 'boost', target: '[data-testid="touch-boost"]', title: 'Boost',
+    text: ['Hold for extra speed. The energy bar under your speed drains in about 6 s and refills on its own.'],
+    when: 'To escape a fight or close distance. It burns fuel fast.',
+    try: { action: 'boost', text: 'Try it: hold Boost.' },
+  },
+  {
+    id: 'autopilot', target: '[data-testid="touch-autopilot"]', title: 'Autopilot',
+    text: [
+      'Tap [[AP]] and the jet flies toward the objective, freeing your left thumb. Touch the stick to take back control.',
+      'Cadet: any time. Pilot: out of combat. Ace: none.',
+    ],
+    when: 'Long flights between fights, or while you check the radar.',
+    try: { action: 'autopilot', text: 'Try it: tap AP.' },
+  },
+  {
+    id: 'console', target: '[data-zone="console"]', title: 'Crew console',
+    text: ['Your AI crew speaks here in one short line. The icon says who; the color says how urgent: white info, green good, amber caution, red danger.'],
+  },
+  {
+    id: 'talk', target: '[data-testid="touch-mic"], [data-testid="touch-keyboard"]', title: 'Talk to the crew',
+    text: [
+      'Hold the mic and speak, or tap the keyboard and type. Ask "fuel?" or "should I escape?".',
+      'When the crew suggests an action, tap its button to accept.',
+    ],
+    when: 'Lift your left thumb to talk; the jet keeps flying straight.',
+  },
+  {
+    id: 'system', target: '[data-testid="explain-btn"], [data-testid="log-btn"], [data-testid="help-btn"], [data-testid="pause-btn"], [data-testid="voice-toggle"]', title: 'Top buttons',
+    text: ['[[i]] links each crew member to the gauges it watches. [[≡]] lists recent messages. [[?]] reopens the briefing, [[❚❚]] pauses, and the speaker switches spoken alerts: off, critical, all.'],
+  },
+  {
+    id: 'done', target: null, title: 'Ready to fly',
+    text: [
+      'The training flight walks you through it for real: rings, the cannon, flares, then a strike.',
+      'You can replay this tour from the main menu any time.',
+    ],
+  },
 ];

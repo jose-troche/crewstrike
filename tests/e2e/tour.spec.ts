@@ -89,3 +89,54 @@ test('the mouse neither steers nor fires', async ({ page, wm }, info) => {
   expect(s1.weapons.rounds).toBe(s0.weapons.rounds);
   expect(Math.abs(((s1.own.heading - s0.own.heading + 540) % 360) - 180)).toBeLessThan(5);
 });
+
+test('touch tour: buttons and swipes page it, and try-it steps tick when used', async ({ page, wm }, info) => {
+  test.skip(info.project.name !== 'phone', 'phone');
+  await page.goto('/');
+  await ready(page);
+  await page.getByTestId('tour-btn').click();
+  const bubble = page.locator('.tour-bubble');
+  await expect(bubble).toHaveAttribute('data-step', 'welcome');
+  await expect(bubble.locator('kbd')).toHaveCount(0); // no keyboard keys on a phone
+
+  // A left swipe goes forward, a right swipe back.
+  const swipe = async (dx: number): Promise<void> => {
+    const tour = page.getByTestId('tour');
+    await tour.dispatchEvent('pointerdown', { pointerId: 1, clientX: 400, clientY: 150, pointerType: 'touch' });
+    await tour.dispatchEvent('pointerup', { pointerId: 1, clientX: 400 + dx, clientY: 155, pointerType: 'touch' });
+  };
+  await swipe(-120);
+  await expect(bubble).toHaveAttribute('data-step', 'stick');
+  await swipe(120);
+  await expect(bubble).toHaveAttribute('data-step', 'welcome');
+
+  const s0 = await wm.snapshot();
+  const seen: string[] = [];
+  for (;;) {
+    const id = (await bubble.getAttribute('data-step'))!;
+    seen.push(id);
+    // Every bubble settles fully on the screen (it glides between spots).
+    const vp = page.viewportSize()!;
+    await expect.poll(async () => {
+      const b = (await bubble.boundingBox())!;
+      return b.y >= 0 && b.y + b.height <= vp.height && b.x >= 0 && b.x + b.width <= vp.width;
+    }, { message: id }).toBe(true);
+    if (id === 'cannon') {
+      const fire = page.getByTestId('touch-cannon');
+      await expect(page.getByTestId('tour-try')).toHaveAttribute('data-done', 'false');
+      await fire.dispatchEvent('pointerdown', { pointerId: 5, pointerType: 'touch' });
+      await expect(page.getByTestId('tour-try')).toHaveAttribute('data-done', 'true');
+      await page.getByTestId('touch-fire').dispatchEvent('pointerup', { pointerId: 5, pointerType: 'touch' });
+    }
+    if (id === 'done') break;
+    await page.getByTestId('tour-next').click();
+    await expect(bubble).not.toHaveAttribute('data-step', id);
+  }
+  for (const id of ['stick', 'throttle', 'speed', 'fuel', 'radar', 'threat-ring', 'fire-cluster', 'cannon', 'missile', 'strike', 'flare', 'boost', 'autopilot', 'talk']) {
+    expect(seen).toContain(id);
+  }
+  expect((await wm.snapshot()).weapons.rounds).toBe(s0.weapons.rounds); // the frozen jet never fired
+  await page.getByTestId('tour-training').click();
+  await expect(page.getByTestId('tour')).toBeHidden();
+  expect((await wm.snapshot()).missionId).toBe('training');
+});

@@ -35,6 +35,10 @@ export interface Settings {
   invertPitch: boolean;
   /** Cockpit tour reads each bubble aloud. */
   tourNarration: boolean;
+  /** Touch buttons buzz on phones that support vibration. */
+  haptics: boolean;
+  /** Phones go full screen and lock to landscape when a flight starts. */
+  fullscreen: boolean;
   reducedMotion: 'auto' | 'on' | 'off';
   keys: Record<Action, string[]>;
   callsign: string;
@@ -52,6 +56,8 @@ export const DEFAULT_SETTINGS: Settings = {
   fullRoll: false,
   invertPitch: false,
   tourNarration: false,
+  haptics: true,
+  fullscreen: true,
   reducedMotion: 'auto',
   keys: DEFAULT_KEYS,
   callsign: '',

@@ -84,3 +84,44 @@ test('gamepad steers and fires (mocked)', async ({ page, wm }, info) => {
   expect((s1.own.heading - s0.own.heading + 360) % 360).toBeGreaterThan(10);
   expect(s1.weapons.flares).toBe(15); // left bumper fires one flare (edge-triggered)
 });
+
+test('a thumb slides from Fire onto Flare without lifting', async ({ page, wm }, info) => {
+  test.skip(info.project.name !== 'phone', 'phone layout');
+  await wm.start('radar-breaker', 'pilot');
+  const pad = page.getByTestId('touch-fire');
+  const fire = (await page.getByTestId('touch-cannon').boundingBox())!;
+  const flare = (await page.getByTestId('touch-flare').boundingBox())!;
+  const at = (b: { x: number; y: number; width: number; height: number }) => ({ clientX: b.x + b.width / 2, clientY: b.y + b.height / 2 });
+  await page.getByTestId('touch-cannon').dispatchEvent('pointerdown', { pointerId: 11, pointerType: 'touch', ...at(fire) });
+  await wm.step(30);
+  const s1 = await wm.snapshot();
+  expect(s1.weapons.rounds).toBeLessThan(600);
+  await pad.dispatchEvent('pointermove', { pointerId: 11, pointerType: 'touch', ...at(flare) });
+  await wm.step(3);
+  const s2 = await wm.snapshot();
+  expect(s2.weapons.flares).toBe(15);
+  await wm.step(30);
+  expect((await wm.snapshot()).weapons.rounds).toBe(s2.weapons.rounds); // cannon stopped when the thumb left Fire
+  await pad.dispatchEvent('pointerup', { pointerId: 11, pointerType: 'touch', ...at(flare) });
+});
+
+test('a slightly-off touch lands on the nearest button', async ({ page, wm }, info) => {
+  test.skip(info.project.name !== 'phone', 'phone layout');
+  await wm.start('radar-breaker', 'pilot');
+  const flare = (await page.getByTestId('touch-flare').boundingBox())!;
+  // Just outside the flare button's circle, in the gap of the cluster.
+  const p = { clientX: flare.x + flare.width / 2, clientY: flare.y - 8 };
+  await page.getByTestId('touch-fire').dispatchEvent('pointerdown', { pointerId: 12, pointerType: 'touch', ...p });
+  await wm.step(3);
+  await page.getByTestId('touch-fire').dispatchEvent('pointerup', { pointerId: 12, pointerType: 'touch', ...p });
+  expect((await wm.snapshot()).weapons.flares).toBe(15);
+});
+
+test('touch throttle rocker sets the notch', async ({ page, wm }, info) => {
+  test.skip(!isTouch(info.project.name), 'touch projects');
+  await wm.start('radar-breaker', 'pilot');
+  await page.getByRole('button', { name: 'Throttle slow' }).dispatchEvent('pointerdown', { pointerId: 13, pointerType: 'touch' });
+  await page.getByTestId('touch-throttle').dispatchEvent('pointerup', { pointerId: 13, pointerType: 'touch' });
+  await wm.step(3);
+  expect((await wm.snapshot()).own.throttle).toBe(0);
+});

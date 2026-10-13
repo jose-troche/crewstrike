@@ -79,20 +79,22 @@ The jet always flies forward and banks into turns automatically, so steering is 
 | Action | Keyboard | Gamepad | Touch |
 | --- | --- | --- | --- |
 | Steer | Arrow keys | Left stick | Left virtual stick |
-| Throttle | W / S | Right stick up and down | Slider on left edge |
+| Throttle | W / S | Right stick up and down | F / C / S rocker on the left |
 | Boost | Shift (hold) | Left trigger | Boost button |
 | Cannon | Space (hold) | Right trigger | Fire button (hold) |
 | Heat-seeking missile | F | Right bumper | Missile button |
 | Strike missile | G | Y / Triangle | Strike button (appears in strike zone) |
 | Flares | E | Left bumper | Flare button |
 | Next target | Tab | X / Square | Tap an enemy on radar |
-| Autopilot | R | B / Circle | Autopilot toggle |
-| Push-to-talk | V (hold) | D-pad down (hold) | Mic button (hold) |
+| Autopilot | R | B / Circle | AP button (left thumb) |
+| Push-to-talk | V (hold) | D-pad down (hold) | Mic button (hold, left thumb) |
 | Type a question | / | None | Keyboard icon |
 | Voice on or off | M | Menu | Speaker icon |
 | Pause | Esc | Start | Pause icon |
 
-All keys and buttons can be remapped. On desktop the mouse never steers or fires: flying is keyboard (or gamepad) only, and the mouse is for menus and buttons. Tapping a radar contact to target it is touch-only; Tab does it on a keyboard.
+On touch screens the left thumb flies (stick, throttle, autopilot, mic, keyboard) and the right thumb fights: Fire is the big home button with Missile, Flare, Strike and Boost on an arc around it, each showing what is left. A touch goes to the nearest button and a thumb can slide between buttons without lifting.
+
+All keys can be remapped. On desktop the mouse never steers or fires: flying is keyboard (or gamepad) only, and the mouse is for menus and buttons. Tapping a radar contact to target it is touch-only; Tab does it on a keyboard.
 
 ### 4.3 Difficulty levers
 
@@ -313,11 +315,12 @@ The landing page is the cockpit itself, live and paused behind a three-card expl
 
 1. **Your mission.** A picture strip: your jet, enemies, target, exit zone. One line: "Fly in, destroy the target, get out."
 2. **Your AI crew.** The six agent icons around a cockpit sketch, each linked by a line to the gauges it owns. One line: "Six AI agents watch your instruments and tell you what matters."
-3. **Fly.** Control diagram for the device detected: keyboard, gamepad, or touch. Difficulty picker (Cadet preselected), then the buttons "Cockpit tour" (desktop only), "Training flight" and "Start mission".
+3. **Fly.** Control diagram for the device detected: keyboard, gamepad, or touch. Difficulty picker (Cadet preselected), then the buttons "Cockpit tour", "Training flight" and "Start mission".
 
 - Skip is always visible; the "?" button reopens the explainer later.
 - The explainer shows only on the first visit (remembered in the browser).
-- **Cockpit tour** (desktop) is a static lesson on a frozen cockpit. A spotlight moves across each instrument with a speech bubble beside it: gun sight, flying keys, objective, mission bar, speed and throttle, fuel, altitude, damage, weather, radar, threat ring, the weapons panel, then each weapon (cannon, heat-seeker, strike, flares) with a "When to use it" line, the crew console, crew strip, talking to the crew, autopilot, and a full key list. Key names come from the player's current key map. → or Enter moves on, ← goes back, Esc leaves, and R toggles **Read aloud** (speech synthesis, off by default, remembered). The threat-ring step stages an inbound missile so a red wedge shows. The last bubble offers "Start training flight". The main menu keeps a "Cockpit tour" button, highlighted until the tour has been seen once.
+- **Cockpit tour** is a static lesson on a frozen cockpit. A spotlight moves across each instrument with a speech bubble beside it: gun sight, flying keys, objective, mission bar, speed and throttle, fuel, altitude, damage, weather, radar, threat ring, the weapons panel, then each weapon (cannon, heat-seeker, strike, flares) with a "When to use it" line, the crew console, crew strip, talking to the crew, autopilot, and a full key list. Key names come from the player's current key map. → or Enter moves on, ← goes back, Esc leaves, and R toggles **Read aloud** (speech synthesis, off by default, remembered). The threat-ring step stages an inbound missile so a red wedge shows. The last bubble offers "Start training flight". The main menu keeps a "Cockpit tour" button, highlighted until the tour has been seen once.
+- **On a touch screen** the tour names buttons, not keys, and pages by Next and Back or by swiping. It starts with the two-thumb split, shows a resting stick, and covers the throttle rocker, the fire arc, each weapon button, boost, autopilot, talking and the top buttons. Every control step is a **"try it"**: the spotlit control stays live (everything else is blocked) and the bubble ticks when the player uses it. The frozen jet never moves or fires. Every bubble fits on a phone held sideways without scrolling.
 - **Training flight** takes about 60 seconds: fly through three rings, shoot a drone, flare a missile, fire a strike missile. Each step is shown by an arrow and a highlighted control, not paragraphs.
 
 ## 13. Responsive UI
@@ -328,14 +331,16 @@ One cockpit layout reflows from a widescreen monitor to a phone held sideways, k
 | --- | --- | --- |
 | Wide | Landscape, width 1280 px and up | Full cockpit: gauges on both sides, radar bottom-left, weapons bottom-right, console under the crosshair |
 | Compact | Landscape, 900–1279 px wide, or height under 720 px | Smaller gauges; speed and altitude become thin tapes; weather folds into the radar |
-| Touch | Any touch-first device in landscape | Virtual stick bottom-left, fire cluster bottom-right, radar top-left, console top-center |
+| Touch | A touch-first device in landscape, 520 px tall or more | Virtual stick bottom-left, fire cluster bottom-right, radar top-left, console top-center |
+| Phone | A touch-first device in landscape, under 520 px tall | Radar, objective and system buttons across the top; speed and altitude flank the sight; left thumb: stick, throttle, autopilot, mic; right thumb: Fire with the other weapons on an arc around it; two console lines between the thumbs. Weapon counts ride on the buttons |
 | Rotate | Portrait | A simple picture asking you to turn the device; the game pauses |
 
 **Requirements**
 
 - 60 fps on desktop and laptop; 30 fps or better on a mid-range phone, with resolution lowered automatically to hold it.
 - Under 50 ms from input to on-screen response.
-- Every touch target is at least 44 px; notches and rounded corners are respected.
+- Every touch target is at least 44 px, and thumb buttons on a phone are at least 10 px apart; notches and rounded corners are respected.
+- On a phone the cockpit, main and pause menus, briefing, tour and results all fit on one screen without scrolling; only the Settings list scrolls. Phones fly full screen and locked to landscape.
 - HUD text and gauges scale smoothly with the screen; nothing overlaps the crosshair area at any size.
 - First load under 5 MB compressed, so the cockpit appears in about 2 seconds on a typical connection.
 
