@@ -443,7 +443,7 @@ export interface ControlState {
 }
 ```
 
-- **Keyboard:** a remappable key map. The mouse does not steer or fire; it only drives menus and buttons.
+- **Keyboard:** a remappable key map. The mouse does not steer or fire; it only drives menus and buttons. Left and right keys ramp the stick instead of slamming it: holding one builds the turn to full over about 0.8 s, letting go eases back to centre over about 0.6 s, and pressing the other way recentres within 0.2 s before turning that way (`rampKeyAxis` in game-core).
 - **Gamepad:** `navigator.getGamepads()` polled each frame, 0.12 dead zone.
 - **Touch:** pointer events; the left half is a floating virtual stick that starts where the thumb lands, with a small radial dead zone, a gentle response curve (fine aim near the middle) and a base that trails the thumb past the rim so reversing is instant. Buttons are grouped into thumb pads: a touch goes to the nearest button within reach, a held thumb keeps its button through small wobbles, and a thumb can slide from one button to the next (Fire to Flare) without lifting. Tap buttons act on touch-down; the keyboard button acts on release so the soft keyboard can open. Buttons buzz briefly where `navigator.vibrate` exists (setting: "Buzz on button press"). Starting a flight or the tour on a touch device requests full screen and a landscape lock (setting: "Full screen when flying").
 - Crew lines and how-to answers name touch buttons on touch devices ("Tap Strike", not "Press G").

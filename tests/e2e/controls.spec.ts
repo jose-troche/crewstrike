@@ -40,7 +40,7 @@ test('autopilot hands back on stick input', async ({ page, wm }, info) => {
   await wm.step(10);
   expect((await wm.snapshot()).own.autopilot).toBe(true);
   await page.keyboard.down('ArrowLeft');
-  await wm.step(5);
+  await wm.step(12);
   await page.keyboard.up('ArrowLeft');
   expect((await wm.snapshot()).own.autopilot).toBe(false);
 });

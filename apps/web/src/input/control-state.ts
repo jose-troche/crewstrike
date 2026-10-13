@@ -1,4 +1,4 @@
-import { clamp, neutralControls, type ControlState } from '@crewstrike/game-core';
+import { STEP, clamp, neutralControls, rampKeyAxis, type ControlState } from '@crewstrike/game-core';
 import type { Action, Settings } from '../settings';
 import type { TouchControls } from './touch';
 
@@ -32,6 +32,8 @@ export class InputManager {
   throttle: 0 | 1 | 2 = 1;
   private padPrev: boolean[] = [];
   private padAxisLatch = 0;
+  /** Smoothed left/right keys, so a held arrow builds the turn instead of slamming it. */
+  private keyX = 0;
   touch: TouchControls | null = null;
   /** Test hooks may force controls for scripted runs. */
   override: Partial<ControlState> | null = null;
@@ -113,6 +115,7 @@ export class InputManager {
   resetHeld(): void {
     this.held.clear();
     this.latched.clear();
+    this.keyX = 0;
     this.touch?.reset();
   }
 
@@ -157,13 +160,17 @@ export class InputManager {
     this.padPrev = pad.buttons.map(b => b.pressed);
   }
 
-  /** Merge every source into one ControlState; latched presses are consumed once. */
+  /** Merge every source into one ControlState; called once per fixed step, latched presses are consumed once. */
   read(): ControlState {
     const c = neutralControls(this.throttle);
-    if (!this.enabled) return c;
+    if (!this.enabled) {
+      this.keyX = 0;
+      return c;
+    }
     const h = this.held;
-    if (h.has('left')) c.stickX -= 1;
-    if (h.has('right')) c.stickX += 1;
+    const dir = ((h.has('right') ? 1 : 0) - (h.has('left') ? 1 : 0)) as -1 | 0 | 1;
+    this.keyX = rampKeyAxis(this.keyX, dir, STEP);
+    c.stickX += this.keyX;
     if (h.has('up')) c.stickY += 1;
     if (h.has('down')) c.stickY -= 1;
     c.boost = h.has('boost');

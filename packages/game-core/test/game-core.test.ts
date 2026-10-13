@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CADET, ACE, MISSIONS, applySpawn, computeScore, createGame, fire, groundHeight, neutralControls, planRoute,
-  profileFor, setAutopilot, snapshot, step, surfaceHeight, type GameState,
+  profileFor, rampKeyAxis, setAutopilot, snapshot, step, surfaceHeight, type GameState,
 } from '../src';
 import { autopilotRun } from './helpers';
 
@@ -154,5 +154,31 @@ describe('route planning', () => {
     const plan = planRoute([0, 0], [20000, 0], []);
     expect(plan.waypoint).toBeNull();
     expect(plan.label).toBe('east');
+  });
+});
+
+describe('keyboard steering ramp', () => {
+  const dt = 1 / 60;
+  const hold = (x: number, dir: -1 | 0 | 1, frames: number): number => {
+    for (let i = 0; i < frames; i++) x = rampKeyAxis(x, dir, dt);
+    return x;
+  };
+  it('builds the turn gradually while a key is held', () => {
+    const quick = hold(0, -1, 6);
+    expect(quick).toBeLessThan(0);
+    expect(quick).toBeGreaterThan(-0.2);
+    expect(hold(0, -1, 30)).toBeLessThan(quick);
+    expect(hold(0, -1, 120)).toBe(-1);
+  });
+  it('eases back to centre on release', () => {
+    const half = hold(1, 0, 15);
+    expect(half).toBeGreaterThan(0.3);
+    expect(half).toBeLessThan(1);
+    expect(hold(1, 0, 60)).toBe(0);
+  });
+  it('recentres faster when the other key is pressed, then turns that way', () => {
+    expect(hold(1, -1, 12)).toBeLessThan(hold(1, 0, 12));
+    expect(hold(1, -1, 12)).toBe(0);
+    expect(hold(-1, 1, 30)).toBeGreaterThan(0);
   });
 });
