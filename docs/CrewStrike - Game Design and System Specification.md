@@ -277,7 +277,7 @@ In the game, zones use the urgency colors from section 8; the agent colors here 
 The console shows at most two short lines below the crosshair, out of the aiming area; you can read it in a glance or ignore it, and voice is optional.
 
 - **Format:** agent icon, then at most eight words, colored by urgency. Hover or tap a line for one more sentence of detail.
-- **Lifetime:** lines fade after 4 seconds; red lines stay until the danger is over.
+- **Lifetime:** lines fade after about 4 seconds, or within a fraction of a second once the condition they describe clears; red lines stay until the danger is over.
 - **Pace:** at most one new line every 2 seconds, except red. Repeats are merged ("Drones ×5").
 - **Combat quiet:** while you're dogfighting or defending a missile, only red and amber lines appear.
 - **Chatter level** follows difficulty (tips, key alerts, critical only) and can be set separately.

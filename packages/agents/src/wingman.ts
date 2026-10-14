@@ -9,6 +9,8 @@ export const PACE_MS = 2000;
 export const KEY_COOLDOWN_MS = 8000;
 export const MAX_LINES = 2;
 export const HISTORY = 30;
+/** A line whose condition has cleared leaves after this grace, so one-tick blips do not flicker. */
+export const CLEAR_GRACE_MS = 600;
 
 export interface ConsoleState {
   lines: ConsoleLine[];
@@ -93,10 +95,14 @@ export class AgentRuntime {
     }
     const mergedKeys = new Set(st.lines.map(l => l.key));
 
-    // Expire: red lines stay until the danger is over; others fade after their lifetime.
+    // Expire: red lines stay until the danger is over. Others fade after their lifetime, or sooner
+    // once a continuing condition (still reported after the line appeared) stops being reported.
+    // One-off lines (events, tips) are reported once, so they always get their full lifetime.
     st.lines = st.lines.filter(l => {
       const seen = st.lastSeen.get(l.id) ?? l.at;
-      if (l.sticky) return live.has(l.key) || s.now - seen < 600;
+      const gone = !live.has(l.key) && s.now - seen >= CLEAR_GRACE_MS;
+      if (l.sticky) return !gone;
+      if (seen > l.at && gone) return false;
       return s.now - l.at < l.ttlMs;
     });
 

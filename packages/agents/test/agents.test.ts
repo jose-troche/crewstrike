@@ -89,6 +89,33 @@ describe('agents', () => {
     expect(outs.at(-1)?.lines.some(l => l.key === 'missile')).toBe(false);
   });
 
+  it('an amber line clears soon after its condition does, not at the end of its lifetime', () => {
+    const s = game('pilot');
+    const rt = new AgentRuntime('tips');
+    drive(s, rt, 6);
+    s.player.damage = 0.4;
+    let outs = drive(s, rt, 24);
+    expect(outs.at(-1)?.lines.some(l => l.key === 'damage')).toBe(true);
+    s.player.damage = 0.1;
+    outs = drive(s, rt, 60);
+    expect(outs.at(-1)?.lines.some(l => l.key === 'damage')).toBe(false);
+  });
+
+  it('one-off lines keep their full lifetime', () => {
+    const rt = new AgentRuntime('tips');
+    let first = true;
+    rt.agents = [{
+      id: 'mission', owns: [], status: () => '',
+      step: () => (first ? ((first = false), [{ key: 'once', rank: 6, level: 'green', ttlMs: 4000, text: 'Target destroyed!' }]) : []),
+    }];
+    let out = rt.tick(snapAt(10000));
+    expect(out.fresh?.key).toBe('once');
+    for (let t = 10100; t <= 13000; t += 100) out = rt.tick(snapAt(t));
+    expect(out.lines.some(l => l.key === 'once')).toBe(true);
+    for (let t = 13100; t <= 14500; t += 100) out = rt.tick(snapAt(t));
+    expect(out.lines.some(l => l.key === 'once')).toBe(false);
+  });
+
   it('pull-up wins over everything else', () => {
     const s = createGame('radar-breaker', { seed: 42, difficulty: 'ace' });
     const rt = new AgentRuntime('critical');
