@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applySpawn, createGame, neutralControls, snapshot, step } from '@crewstrike/game-core';
 import type { CommandSink, GameSnapshot } from '@crewstrike/shared';
 import {
-  advise, classify, handle, normalize, templateReason, templateRecap, validateReason, validateRecap,
+  advise, classify, handle, normalize, recheckAdvice, templateReason, templateRecap, validateReason, validateRecap,
 } from '../src';
 
 function sink(): CommandSink & { calls: string[] } {
@@ -140,6 +140,42 @@ describe('strategic classifier and advisor', () => {
       expect(r.advice.reason.split(/\s+/).length).toBeLessThanOrEqual(15);
       expect(r.advice.source).toBe('template');
     }
+  });
+
+  it('keeps advice that still holds against a newer snapshot', () => {
+    const g = createGame('radar-breaker', { seed: 42, difficulty: 'pilot' });
+    applySpawn(g, { type: 'drones', count: 2, range_km: 3 });
+    step(g, neutralControls());
+    const a = advise('engage_or_avoid', snapshot(g));
+    step(g, neutralControls());
+    expect(recheckAdvice(a, snapshot(g))).toBe(a);
+  });
+
+  it('replaces advice whose verdict flipped', () => {
+    const g = createGame('radar-breaker', { seed: 42, difficulty: 'pilot' });
+    applySpawn(g, { type: 'drones', count: 2, range_km: 3 });
+    step(g, neutralControls());
+    const a = advise('engage_or_avoid', snapshot(g));
+    expect(a.verdict).toBe('ENGAGE');
+    applySpawn(g, { type: 'damage', amount: 0.8 });
+    step(g, neutralControls());
+    const b = recheckAdvice(a, snapshot(g));
+    expect(b.verdict).toBe('ABORT');
+    expect(b.source).toBe('template');
+  });
+
+  it('replaces a reason whose numbers went stale', () => {
+    const g = createGame('radar-breaker', { seed: 42, difficulty: 'pilot' });
+    applySpawn(g, { type: 'drones', count: 2, range_km: 3 });
+    step(g, neutralControls());
+    const base = advise('engage_or_avoid', snapshot(g));
+    const a = { ...base, reason: `${base.facts.missiles} missiles ready. Take them.`, source: 'edge' as const };
+    applySpawn(g, { type: 'ammo', missiles: 2 });
+    step(g, neutralControls());
+    const b = recheckAdvice(a, snapshot(g));
+    expect(b.verdict).toBe('ENGAGE');
+    expect(b.reason).not.toBe(a.reason);
+    expect(b.source).toBe('template');
   });
 });
 

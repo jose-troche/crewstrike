@@ -301,6 +301,7 @@ Hold push-to-talk, say a few words, let go: commands act instantly, questions ab
 - **One reason**, at most 15 words: "Two fighters, you have 2 missiles and 30% damage. Avoid; go north."
 - **Optional action**, accepted with "yes", the Y key or a tap: "Set route north?"
 - **Deterministic first.** A local advisor scores the options from fuel, damage, ammo, threats and distance, so the verdict exists even with no network. The model phrases the reason and may weigh nuance, but every number it says is checked against game state before it appears.
+- **Never stale.** An open verdict is rechecked against every new snapshot (10 times a second). If the verdict flips, the safe route changes, or a number in the reason stops being true, a fresh deterministic answer replaces it. A late model reply is kept only if it still holds. A new red alert clears the verdict, because the situation it answered is gone.
 
 ### 11.2 Keeping it quick
 

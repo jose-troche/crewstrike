@@ -63,3 +63,25 @@ test('accepting the suggested action sets the route', async ({ page }) => {
   await expect(page.getByTestId('verdict')).toBeHidden();
   await expect(page.getByTestId('console')).toContainText('Route home');
 });
+
+test('a new red alert clears an open verdict', async ({ page }) => {
+  await page.route('**/api/advice', r => r.fulfill({ status: 429, json: { error: 'daily_ceiling' } }));
+  const wm = await setup(page);
+  await wm.ask('should I abort?');
+  await expect(page.getByTestId('verdict-chip')).toHaveText(/CONTINUE|ABORT/);
+  await wm.spawn({ type: 'missile', bearing: 180, range_km: 9 });
+  await wm.step(12);
+  await expect(page.getByTestId('console').locator('li[data-level="red"]')).toHaveCount(1);
+  await expect(page.getByTestId('verdict')).toBeHidden();
+});
+
+test('an open verdict follows the state it was built from', async ({ page }) => {
+  await page.route('**/api/advice', r => r.fulfill({ status: 429, json: { error: 'daily_ceiling' } }));
+  const wm = await setup(page);
+  await wm.ask('should I abort?');
+  await expect(page.getByTestId('verdict-chip')).toHaveText('CONTINUE');
+  await wm.spawn({ type: 'damage', amount: 0.55 });
+  await wm.step(6);
+  await expect(page.getByTestId('verdict-chip')).toHaveText('ABORT');
+  await expect(page.getByTestId('verdict-action')).toHaveText('Set route home?');
+});

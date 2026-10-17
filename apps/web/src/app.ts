@@ -2,7 +2,7 @@ import {
   DEG, MISSIONS, STEP, add, applyRoute, applySpawn, computeScore, createGame, cycleTarget, fire, forward, scale, setAutopilot, setBoost,
   snapshot, step, type ControlState, type GameState, type ScoreResult, type SpawnEvent,
 } from '@crewstrike/game-core';
-import { handle, templateRecap, type RecapFacts } from '@crewstrike/nl';
+import { handle, recheckAdvice, templateRecap, type RecapFacts } from '@crewstrike/nl';
 import type { Chatter } from '@crewstrike/agents';
 import type {
   Advice, AgentOutput, CommandSink, DifficultyName, GameEvent, GameSnapshot, LeaderboardRow, NlResult, VoiceMode,
@@ -445,6 +445,7 @@ export class GameApp {
       const snap = snapshot(s, this.lastSnapNow);
       this.lastSnapNow = snap.now;
       this.agents.post(snap);
+      this.recheckPending(snap);
     }
     if (wasPlaying && s.status !== 'playing') {
       this.audio.explosion(s.status === 'lost');
@@ -487,6 +488,28 @@ export class GameApp {
     this.lastOutput = o;
     this.hud.applyAgents(o, this.state.t * 1000);
     if (o.fresh) this.audio.say(o.fresh);
+    // A new red alert outranks any open advice: the situation it answered has changed.
+    if (o.fresh?.level === 'red') this.dropPending();
+  }
+
+  /** Shown advice must stay true: a flipped verdict or a stale number swaps in a fresh deterministic answer. */
+  private recheckPending(snap: GameSnapshot): void {
+    const a = this.pending;
+    if (!a) return;
+    if (!this.hud.verdictVisible()) {
+      this.pending = null;
+      return;
+    }
+    const next = recheckAdvice(a, snap);
+    if (next === a) return;
+    this.pending = next;
+    this.hud.showVerdict(next, next.verdict === a.verdict);
+  }
+
+  private dropPending(): void {
+    if (!this.pending) return;
+    this.pending = null;
+    this.hud.hideVerdict();
   }
 
   // ---- voice, commands and questions ----
@@ -567,10 +590,12 @@ export class GameApp {
         this.pending = a;
         this.hud.showVerdict(a);
         if (!TEST_HOOKS || this.router.session) await this.ensureSessionQuick();
-        const better = await this.router.phrase(a);
+        const phrased = await this.router.phrase(a);
+        // The model answered an older snapshot; keep its wording only if it still holds now.
+        const better = recheckAdvice(phrased, snapshot(this.state));
         if (this.pending === a) {
           this.pending = better;
-          this.hud.showVerdict(better);
+          this.hud.showVerdict(better, true);
         }
         return { kind: 'strategic', advice: better };
       }

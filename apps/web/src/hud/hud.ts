@@ -592,7 +592,8 @@ export class Hud {
 
   // ---- verdict chip ----
 
-  showVerdict(a: Advice): void {
+  /** keepTimer refreshes an open verdict in place without restarting its 9 s lifetime. */
+  showVerdict(a: Advice, keepTimer = false): void {
     const v = this.el.verdict!;
     const chip = this.q(v, '[data-testid="verdict-chip"]')!;
     chip.textContent = a.verdict;
@@ -603,6 +604,7 @@ export class Hud {
     act.style.display = a.actionLabel ? '' : 'none';
     v.classList.add('on');
     v.dataset.source = a.source;
+    if (keepTimer) return;
     clearTimeout(this.verdictTimer);
     this.verdictTimer = window.setTimeout(() => this.hideVerdict(), 9000);
   }

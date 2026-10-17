@@ -1,6 +1,7 @@
 import type { Advice, AdviceAction, GameSnapshot, StrategicKind, Verdict } from '@crewstrike/shared';
 import { planRoute, type Hazard, type RoutePlan } from '@crewstrike/game-core';
 import { templateReason } from './templates';
+import { validateReason } from './validate';
 
 const HAZARD_R: Record<string, number> = { sam: 12000, ship: 9000, aaa: 3000, fighter: 7000, drone: 2500, missile: 0 };
 
@@ -87,4 +88,16 @@ export function advise(kind: StrategicKind, s: GameSnapshot): Advice {
       return make(kind, 'CONTINUE', facts, 'route_target');
     }
   }
+}
+
+/**
+ * Re-checks shown advice against a newer snapshot. Returns the same object while it still holds:
+ * same verdict, same safe route, and every number in the reason still true. Otherwise returns a
+ * fresh deterministic answer, so a stale sentence never stays on screen.
+ */
+export function recheckAdvice(a: Advice, s: GameSnapshot): Advice {
+  const now = advise(a.kind, s);
+  const sameRoute = a.action !== 'route_safest' || now.facts.route === a.facts.route;
+  if (now.verdict === a.verdict && sameRoute && validateReason(a.reason, a.verdict, now.facts).ok) return a;
+  return now;
 }
